@@ -12,7 +12,7 @@ import { DocSearchIndex } from "../search/docSearch";
  **/ 
 export interface SourceAdapter {
     getProjectTree():Promise<ProjectTree>
-    getDocument(uri:URL):Promise<Document>
+    getDocument(uri:URL):Promise<Document|undefined>
 
     searchIndex():AsyncGenerator<DocSearchIndex, void, unknown>
 }
