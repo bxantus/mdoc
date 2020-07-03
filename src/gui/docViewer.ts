@@ -51,6 +51,11 @@ class DocViewer {
 
     loadDocumentInViewer(document:Document, title) {
         const md = new MarkdownIt()
+        // todo: should add/inject to the generated html:
+        //    - link to stylesheet styling font size and other aspects
+        //    - link to highlight.js (or similar source hiliter lib)
+        //    - import of extra functionality from `www/viewer.js` (communication, opening links etc.)
+        // todo: internal links do not work, markdownIt should add ids to the headings in the document, and they will work out of the box
         this.viewerPanel.webview.html = md.render(document.markdownContent.toString(), {})
         this.viewerPanel.title = title
         this.viewerPanel.reveal()
