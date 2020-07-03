@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { SourceAdapter, TreeNode as ProjectTreeNode, ProjectTree } from '../source/sourceAdapter';
 import MarkdownIt from "markdown-it";
+import markdownItAnchor from "markdown-it-anchor"
 import { Document } from '../source/document';
 
 interface Project {
@@ -55,7 +56,10 @@ class DocViewer {
         //    - link to stylesheet styling font size and other aspects
         //    - link to highlight.js (or similar source hiliter lib)
         //    - import of extra functionality from `www/viewer.js` (communication, opening links etc.)
-        // todo: internal links do not work, markdownIt should add ids to the headings in the document, and they will work out of the box
+
+        // internal links do not work by default, markdownItAnchor adds ids to the headings in the document, and they will work out of the box
+        // NOTE: should use a slugify function which preserves camelCase (or use toc generator which generates the same internal links!)
+        md.use(markdownItAnchor, {level: 1})
         this.viewerPanel.webview.html = md.render(document.markdownContent.toString(), {})
         this.viewerPanel.title = title
         this.viewerPanel.reveal()
