@@ -12,19 +12,18 @@ import { DocSearchIndex } from "../search/docSearch";
  **/ 
 export interface SourceAdapter {
     getProjectTree():Promise<ProjectTree>
-    getDocument(uri:URL):Promise<Document|undefined>
+    getDocument(uri:string):Promise<Document|undefined>
 
     searchIndex():AsyncGenerator<DocSearchIndex, void, unknown>
 }
 
-interface ProjectTree {
-    nodes: TreeNode[]
+export interface ProjectTree {
+    children: TreeNode[]
 }
 
-interface TreeNode {
+export interface TreeNode {
     // todo: do we need an id member (for ex. to reference something from the tree)
     label:string
-    isGroup:boolean  // group nodes are expected to have children. todo: is this needed?
-    docUri?:URL // some nodes (mostly groups, do not have an asssociated document)
+    docUri?:string // some nodes (mostly groups, do not have an asssociated document)
     children:TreeNode[]
 }
