@@ -2,7 +2,6 @@ import { SourceAdapter, ProjectTree, TreeNode } from "./sourceAdapter"
 import { URL } from "url";
 import { DocSearchIndex } from "../search/docSearch";
 import { Document } from "./document";
-import  MarkdownIt from "markdown-it"
 import * as fs from "fs"
 import { promisify } from "util";
 import { MarkdownParser, ParseListener } from "../parser/mdParser";
@@ -31,6 +30,15 @@ export class GitSource implements SourceAdapter {
     }
 
     async getDocument(uri:string):Promise<Document|undefined> {
+        // it is expected that uri is a relative one, from the project's path
+        const fileName = `${this.path}/${uri}`
+        try {
+            const buf = await readFile(fileName)
+            return { markdownContent: buf }
+
+        } catch(err) {
+            // document may not exist
+        }
         return undefined
     }
 

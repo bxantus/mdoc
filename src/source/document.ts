@@ -1,5 +1,5 @@
 export interface Document {
-    markdownContent:string
+    markdownContent:Buffer
      // some kind of functionality would be beneficial to query the first few paragraphs of a heading
 }
 
