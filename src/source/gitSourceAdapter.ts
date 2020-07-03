@@ -11,6 +11,7 @@ const readFile = promisify(fs.readFile)
 
 export class GitSource implements SourceAdapter {
     private path:string = "" // path to the root of the repository on the file system
+    #title = "<no title>"
 
     constructor(location:URL) {
         // location may be a hard disk location, also .git url to the repository
@@ -21,9 +22,12 @@ export class GitSource implements SourceAdapter {
         this.init()
     }
 
+    get title() { return this.#title }
 
     async getProjectTree():Promise<ProjectTree> {
-        return { children: [] }
+        if (!this.projectTree) 
+            this.projectTree = this.loadProjectTree()
+        return this.projectTree
     }
 
     async getDocument(uri:string):Promise<Document|undefined> {
@@ -36,7 +40,7 @@ export class GitSource implements SourceAdapter {
 
     private init() {
         // update projectTree
-        this.loadProjectTree()
+        this.projectTree = this.loadProjectTree()
         // fetch heading indexes
     }
 
@@ -46,7 +50,7 @@ export class GitSource implements SourceAdapter {
         // fetch index.md and load structure from it
         const contents = await readFile(`${this.path}/index.md`) // todo: catch errors, file may not exist!
         const parser = new MarkdownParser(contents)
-        let title = "no title"
+        let title = this.#title
         const tree:ProjectTree = { children:[] }
         let activeTree:{children:TreeNode[]} = tree
         let currNode:TreeNode|undefined 
@@ -96,7 +100,9 @@ export class GitSource implements SourceAdapter {
         }
         
         parser.parse(listener)
-        console.log("Parsed index.md. title: ", title)
-        // if no index.md is present: walk the directories in the repository and build from that
+        this.#title = title
+        // todo: if no index.md is present: walk the directories in the repository and build from that
+
+        return tree
     }
 }

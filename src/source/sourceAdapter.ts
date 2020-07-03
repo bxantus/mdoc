@@ -11,6 +11,7 @@ import { DocSearchIndex } from "../search/docSearch";
  *  - provide access to settings if any (ex. auto pull, caching settings...)
  **/ 
 export interface SourceAdapter {
+    readonly title:string
     getProjectTree():Promise<ProjectTree>
     getDocument(uri:string):Promise<Document|undefined>
 

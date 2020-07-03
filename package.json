@@ -10,16 +10,28 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:xdoc.helloWorld"
+		"onStartupFinished"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [
-			{
-				"command": "xdoc.helloWorld",
-				"title": "Hello World"
-			}
-		]
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "xdoc",
+					"title": "Documentations",
+					"icon": "media/library_books.svg"
+				}
+			]
+		},
+		"views": {
+			"xdoc": [
+				{
+					"id": "xdocProjects",
+					"name": "Projects"
+				}
+			]
+		}
+		
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
