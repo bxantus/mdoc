@@ -80,9 +80,6 @@ export class MarkdownParser {
                     listener.text?.(token.content, source)
             },
             // other types: 
-            // - inline -> based on children: either text or text inside link_open, link_close
-            // - bullet_list_open
-            // - list_item_open
             // - paragraph_open -> ignore
 
         }

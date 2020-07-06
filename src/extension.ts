@@ -4,19 +4,33 @@ import * as vscode from 'vscode';
 import { GitSource } from './source/gitSourceAdapter';
 import { URL } from 'url';
 import { docViewer } from './gui/docViewer';
+import { docProjects } from './source/projects';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+	registerCommands(context)
 	docViewer.init(context)
 
-	// todo: discover registered sources (from settings for ex.), or `<userFolder>/.xdoc/projects.json`
-	// until then a hardcoded gitsource is added
-	const gitSource = new GitSource(new URL("file:///c:/work/uiengine/uie-docs"))
-	
-	// register sources to projects view
-	docViewer.addProject(gitSource)
+	// load and register current projects
+	await docProjects.init()
+	for (const proj of docProjects.projects.projects) {
+		const source = new GitSource(new URL(proj.uri))
+		docViewer.addProject(source)	
+	}
 }
 
 // this method is called when your extension is deactivated
 export function deactivate() {}
+
+function registerCommands(context: vscode.ExtensionContext) {
+	context.subscriptions.push(vscode.commands.registerCommand("xdoc.add.fromFilesystem", async ()=> {
+		const result = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, openLabel: "Select project folder" })
+		if (result && result.length == 1) {
+			const projectUri = result[0]
+			docProjects.addProject({uri: projectUri.toString()})
+			const source = new GitSource(new URL(projectUri.toString()))
+			docViewer.addProject(source)	
+		}
+	}))
+}

@@ -30,7 +30,20 @@
 					"name": "Projects"
 				}
 			]
-		}
+		},
+		"commands": [
+			{
+				"command": "xdoc.add.fromFilesystem",
+				"title": "Add documentation project from the filesystem",
+				"group": "xdoc"
+			}
+		],
+		"viewsWelcome": [
+			{
+				"view": "xdocProjects",
+				"contents": "No documentation projects added.\n[Add project from filesystem](command:xdoc.add.fromFilesystem)"
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

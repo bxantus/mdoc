@@ -16,6 +16,8 @@ export interface SourceAdapter {
     getDocument(uri:string):Promise<Document|undefined>
 
     searchIndex():AsyncGenerator<DocSearchIndex, void, unknown>
+
+    // todo: add refresh and initialize functionality, a loading property, or event (should notify after loaded)
 }
 
 export interface ProjectTree {

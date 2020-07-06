@@ -2,11 +2,8 @@ import { SourceAdapter, ProjectTree, TreeNode } from "./sourceAdapter"
 import { URL } from "url";
 import { DocSearchIndex } from "../search/docSearch";
 import { Document } from "./document";
-import * as fs from "fs"
-import { promisify } from "util";
+import {promises as fs} from "fs"
 import { MarkdownParser, ParseListener } from "../parser/mdParser";
-
-const readFile = promisify(fs.readFile)
 
 export class GitSource implements SourceAdapter {
     private path:string = "" // path to the root of the repository on the file system
@@ -16,7 +13,7 @@ export class GitSource implements SourceAdapter {
         // location may be a hard disk location, also .git url to the repository
         // in case of repo url, the extension will manage the repository on the hard drive
         if (location.protocol == "file:") {
-            this.path = location.pathname.substr(1)
+            this.path = decodeURIComponent(location.pathname).substr(1)
         }
         this.init()
     }
@@ -33,7 +30,7 @@ export class GitSource implements SourceAdapter {
         // it is expected that uri is a relative one, from the project's path
         const fileName = `${this.path}/${uri}`
         try {
-            const buf = await readFile(fileName)
+            const buf = await fs.readFile(fileName)
             return { markdownContent: buf }
 
         } catch(err) {
@@ -56,7 +53,7 @@ export class GitSource implements SourceAdapter {
 
     private async loadProjectTree() {
         // fetch index.md and load structure from it
-        const contents = await readFile(`${this.path}/index.md`) // todo: catch errors, file may not exist!
+        const contents = await fs.readFile(`${this.path}/index.md`) // todo: catch errors, file may not exist!
         const parser = new MarkdownParser(contents)
         let title = this.#title
         const tree:ProjectTree = { children:[] }
