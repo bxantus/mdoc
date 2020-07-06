@@ -2,7 +2,9 @@ import * as vscode from 'vscode';
 import { SourceAdapter, TreeNode as ProjectTreeNode, ProjectTree } from '../source/sourceAdapter';
 import MarkdownIt from "markdown-it";
 import markdownItAnchor from "markdown-it-anchor"
+import hljs from 'highlight.js'
 import { Document } from '../source/document';
+import * as path from 'path';
 
 interface Project {
     source: SourceAdapter
@@ -14,6 +16,7 @@ class DocViewer implements vscode.Disposable {
     projectProvider:ProjectTreeProvider|undefined
     projectTree:vscode.TreeView<Node>|undefined
     #subs:vscode.Disposable[] = []
+    #extensionPath = ""
     
     constructor() {
     }
@@ -24,6 +27,7 @@ class DocViewer implements vscode.Disposable {
     }
     
     init(context:vscode.ExtensionContext) {
+        this.#extensionPath = context.extensionPath
         this.projectProvider = new ProjectTreeProvider(this)
         this.projectTree = vscode.window.createTreeView<Node>("xdocProjects", {treeDataProvider: this.projectProvider})
 
@@ -62,16 +66,43 @@ class DocViewer implements vscode.Disposable {
     }
 
     loadDocumentInViewer(document:Document, title) {
-        const md = new MarkdownIt()
+        const md = new MarkdownIt({
+            highlight(str, lang) {
+                if (lang && hljs.getLanguage(lang)) {
+                    try {
+                        return hljs.highlight(lang, str, /* ignoreIllegals: */ true).value;
+                    } catch (__) {}
+                }
+            
+                return ''; // use external default escaping
+            },
+            linkify: true
+        })
         // todo: should add/inject to the generated html:
-        //    - link to stylesheet styling font size and other aspects
-        //    - link to highlight.js (or similar source hiliter lib)
         //    - import of extra functionality from `www/viewer.js` (communication, opening links etc.)
 
         // internal links do not work by default, markdownItAnchor adds ids to the headings in the document, and they will work out of the box
-        // NOTE: should use a slugify function which preserves camelCase (or use toc generator which generates the same internal links!)
+        // NOTE: should use the same slugify function in the toc generator which should generate the same internal links!
+        const asWebviewUri = (path:string) => this.viewerPanel.webview.asWebviewUri(vscode.Uri.file(path))
+        
+        const markdownCss = asWebviewUri(path.join(this.#extensionPath, "www", "markdown.css"))
+        const hiliteCss = asWebviewUri(path.join(this.#extensionPath, "www", "highlight.css"))
+        
         md.use(markdownItAnchor, {level: 1})
-        this.viewerPanel.webview.html = md.render(document.markdownContent.toString(), {})
+        const markdownContent = md.render(document.markdownContent.toString())
+
+        const htmlContent = 
+            `
+            <head>
+                <link rel="stylesheet" type="text/css" href="${markdownCss}">
+                <link rel="stylesheet" type="text/css" href="${hiliteCss}">
+            </head>
+            <body>
+                ${markdownContent}
+            </body>
+            `
+        
+        this.viewerPanel.webview.html = htmlContent
         this.viewerPanel.title = title
         this.viewerPanel.reveal()
     }
