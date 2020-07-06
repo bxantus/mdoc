@@ -46,12 +46,12 @@ class DocViewer implements vscode.Disposable {
     async openDocument(source:SourceAdapter, docUri:string, title:string) {
         const document = await source.getDocument(docUri)
         if (document) {
-            this.loadDocumentInViewer(document, title) 
+            this.loadDocumentInViewer(document, title, {scrollToTop: true}) 
             this.#documentWatch?.dispose() // dispose old watch
             this.#documentWatch = source.watchDocument(docUri, async ()=> {
                 const newDoc = await source.getDocument(docUri)
                 if (newDoc)
-                    this.loadDocumentInViewer(newDoc, title) 
+                    this.loadDocumentInViewer(newDoc, title, {scrollToTop: false}) 
             })
         }
         
@@ -80,7 +80,7 @@ class DocViewer implements vscode.Disposable {
         }
     }
 
-    loadDocumentInViewer(document:Document, title) {
+    loadDocumentInViewer(document:Document, title:string, options:{ scrollToTop:boolean }) {
         const md = new MarkdownIt({
             highlight(str, lang) {
                 if (lang && hljs.getLanguage(lang)) {
@@ -102,6 +102,7 @@ class DocViewer implements vscode.Disposable {
         
         const markdownCss = asWebviewUri(path.join(this.#extensionPath, "www", "markdown.css"))
         const hiliteCss = asWebviewUri(path.join(this.#extensionPath, "www", "highlight.css"))
+        const viewerJs = asWebviewUri(path.join(this.#extensionPath, "www", "viewer.js"))
         
         md.use(markdownItAnchor, {level: 1})
         const markdownContent = md.render(document.markdownContent.toString())
@@ -111,6 +112,7 @@ class DocViewer implements vscode.Disposable {
             <head>
                 <link rel="stylesheet" type="text/css" href="${markdownCss}">
                 <link rel="stylesheet" type="text/css" href="${hiliteCss}">
+                <script src="${viewerJs}"></script>
             </head>
             <body>
                 ${markdownContent}
@@ -120,6 +122,8 @@ class DocViewer implements vscode.Disposable {
         this.viewerPanel.webview.html = htmlContent
         this.viewerPanel.title = title
         this.viewerPanel.reveal()
+        if (options.scrollToTop)
+            this.viewerPanel.webview.postMessage({command:"scrollToTop"})
     }
 
     #viewerPanel:vscode.WebviewPanel | undefined

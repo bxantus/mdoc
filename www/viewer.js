@@ -10,7 +10,7 @@ document.addEventListener("click", e=>{
         if (t.tagName && "A" === t.tagName && t.href) {
             if (t.getAttribute("href").startsWith("#"))
                 return;
-            if (v.some(e=>t.href.startsWith(e))) // check some scheme types, which should open in external browser
+            if (["http", "https"].some(e=>t.href.startsWith(e))) // check some scheme types, which should open in external browser
                 return;
             const n = t.getAttribute("data-href") || t.getAttribute("href");
             return /^[a-z\-]+:/i.test(n) ? 0 : (vscode.postMessage("openLink", {
@@ -21,4 +21,16 @@ document.addEventListener("click", e=>{
         }
         t = t.parentNode
     }
+})
+
+window.addEventListener('message', event => {
+    const message = event.data; // The JSON data our extension sent
+    const handlers = {
+        scrollToTop() {
+            document.getElementsByTagName('html')[0].scrollTop = 0 // embedded html is scrolled
+        },
+    }
+    const action = handlers[message.command]
+    if (action)
+        action(message)
 })
