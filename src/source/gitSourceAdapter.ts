@@ -45,6 +45,16 @@ export class GitSource implements SourceAdapter {
         return undefined
     }
 
+    watchDocument(uri:string, onChange:()=>void) {
+        const watch = fsWatch(`${this.path}/${uri}`, undefined, async (event) => {
+            if (event == "change") 
+                onChange()
+        })
+        return {
+            dispose() { watch.close(); }
+        }
+    }
+
     async *searchIndex():AsyncGenerator<DocSearchIndex, void, unknown> {
 
     }

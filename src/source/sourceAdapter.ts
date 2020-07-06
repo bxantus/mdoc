@@ -16,6 +16,9 @@ export interface SourceAdapter extends Disposable {
     getProjectTree():Promise<ProjectTree>
     getDocument(uri:string):Promise<Document|undefined>
 
+    /// returns a watcher. call dispose on it, to stop watching
+    watchDocument(uri:string, onChange:()=>void):Disposable
+
     searchIndex():AsyncGenerator<DocSearchIndex, void, unknown>
 
     onProjectTreeChanged:Event<ProjectTree>

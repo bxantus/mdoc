@@ -24,6 +24,8 @@ class DocViewer implements vscode.Disposable {
     dispose() {
         for (const sub of this.#subs)
             sub.dispose()
+        if (this.#documentWatch)
+            this.#documentWatch.dispose()
     }
     
     init(context:vscode.ExtensionContext) {
@@ -33,13 +35,26 @@ class DocViewer implements vscode.Disposable {
 
         context.subscriptions.push(vscode.commands.registerCommand("xdoc.openFromSidebar", async (node: Node) => {
             const docUri = node.projectNode.docUri
-            if (docUri) {
-                const source = getSourceForNode(node)
-                const document = await source?.getDocument(docUri)
-                if (document) 
-                    this.loadDocumentInViewer(document, node.projectNode.label)    
+            const source = getSourceForNode(node)
+            if (docUri && source) {
+                this.openDocument(source, docUri, node.projectNode.label)
             }
         }))
+    }
+
+    #documentWatch:vscode.Disposable|undefined
+    async openDocument(source:SourceAdapter, docUri:string, title:string) {
+        const document = await source.getDocument(docUri)
+        if (document) {
+            this.loadDocumentInViewer(document, title) 
+            this.#documentWatch?.dispose() // dispose old watch
+            this.#documentWatch = source.watchDocument(docUri, async ()=> {
+                const newDoc = await source.getDocument(docUri)
+                if (newDoc)
+                    this.loadDocumentInViewer(newDoc, title) 
+            })
+        }
+        
     }
 
     async addProject(projSource:SourceAdapter) {
@@ -109,7 +124,7 @@ class DocViewer implements vscode.Disposable {
 
     #viewerPanel:vscode.WebviewPanel | undefined
     private createViewerPanel() {
-        return vscode.window.createWebviewPanel(
+        const panel = vscode.window.createWebviewPanel(
             'mDoc',
             'XDoc viewer',
             vscode.ViewColumn.Active,
@@ -117,6 +132,11 @@ class DocViewer implements vscode.Disposable {
                 enableScripts: true
             }
         );       
+        panel.iconPath = {
+            light: vscode.Uri.file(path.join(this.#extensionPath, "media/library_books-light.svg")),
+            dark: vscode.Uri.file(path.join(this.#extensionPath, "media/library_books-dark.svg")),
+        }
+        return panel
     }
 }
 
