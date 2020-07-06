@@ -1,6 +1,7 @@
 import { URL } from "url";
 import { Document } from "./document";
 import { DocSearchIndex } from "../search/docSearch";
+import { Event, Disposable } from "vscode";
 
 /**
  * Represents the source for a documentation project.
@@ -10,13 +11,15 @@ import { DocSearchIndex } from "../search/docSearch";
  *  - provide access to the `document index`, used by search functionality for ex.
  *  - provide access to settings if any (ex. auto pull, caching settings...)
  **/ 
-export interface SourceAdapter {
+export interface SourceAdapter extends Disposable {
     readonly title:string
     getProjectTree():Promise<ProjectTree>
     getDocument(uri:string):Promise<Document|undefined>
 
     searchIndex():AsyncGenerator<DocSearchIndex, void, unknown>
 
+    onProjectTreeChanged:Event<ProjectTree>
+    onTitleChanged:Event<string>
     // todo: add refresh and initialize functionality, a loading property, or event (should notify after loaded)
 }
 

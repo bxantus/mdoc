@@ -9,12 +9,18 @@ interface Project {
     projectTree:  ProjectTree
 }
 
-class DocViewer {
+class DocViewer implements vscode.Disposable {
     projects:Project[] = []
     projectProvider:ProjectTreeProvider|undefined
     projectTree:vscode.TreeView<Node>|undefined
+    #subs:vscode.Disposable[] = []
     
     constructor() {
+    }
+
+    dispose() {
+        for (const sub of this.#subs)
+            sub.dispose()
     }
     
     init(context:vscode.ExtensionContext) {
@@ -39,6 +45,11 @@ class DocViewer {
         }
         this.projects.push(proj)
         this.projectProvider?.changed()
+        // todo: remove subscription, when project changes
+        this.#subs.push(proj.source.onProjectTreeChanged((newTree)=> {
+            proj.projectTree = newTree
+            this.projectProvider?.changed() // todo: this may be a finer grained change, if projectProvider caches tree nodes
+        }))
     }
 
     get viewerPanel() {

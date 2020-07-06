@@ -17,7 +17,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	for (const proj of docProjects.projects.projects) {
 		const source = new GitSource(new URL(proj.uri))
 		docViewer.addProject(source)	
+		context.subscriptions.push(source)
 	}
+
+	context.subscriptions.push(docViewer)
 }
 
 // this method is called when your extension is deactivated

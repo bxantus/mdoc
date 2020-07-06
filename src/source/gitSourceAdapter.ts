@@ -2,8 +2,9 @@ import { SourceAdapter, ProjectTree, TreeNode } from "./sourceAdapter"
 import { URL } from "url";
 import { DocSearchIndex } from "../search/docSearch";
 import { Document } from "./document";
-import {promises as fs} from "fs"
+import {promises as fs, watch as fsWatch, FSWatcher} from "fs"
 import { MarkdownParser, ParseListener } from "../parser/mdParser";
+import { EventEmitter } from "vscode";
 
 export class GitSource implements SourceAdapter {
     private path:string = "" // path to the root of the repository on the file system
@@ -16,6 +17,11 @@ export class GitSource implements SourceAdapter {
             this.path = decodeURIComponent(location.pathname).substr(1)
         }
         this.init()
+    }
+
+    dispose() {
+        if (this.#indexWatch)
+            this.#indexWatch.close()
     }
 
     get title() { return this.#title }
@@ -43,13 +49,27 @@ export class GitSource implements SourceAdapter {
 
     }
 
+    get onProjectTreeChanged() { return this.#projectTreeChanged.event }
+    get onTitleChanged() { return this.#titleChanged.event }
+
+    #indexWatch:FSWatcher|undefined
     private init() {
         // update projectTree
         this.projectTree = this.loadProjectTree()
+        
+        // watch changes in index.md
+        this.#indexWatch = fsWatch(`${this.path}/index.md`, undefined, async (event) => {
+            if (event == "change") {
+                this.reloadProjectTree()
+            }
+        })
+    
         // fetch heading indexes
     }
 
     private projectTree:ProjectTree|Promise<ProjectTree>|undefined
+    #projectTreeChanged = new EventEmitter<ProjectTree>()
+    #titleChanged = new EventEmitter<string>()
 
     private async loadProjectTree() {
         // fetch index.md and load structure from it
@@ -109,5 +129,18 @@ export class GitSource implements SourceAdapter {
         // todo: if no index.md is present: walk the directories in the repository and build from that
 
         return tree
+    }
+
+    #reloadTimeout:NodeJS.Timeout|undefined
+    private reloadProjectTree() {
+        if (!this.#reloadTimeout)
+            this.#reloadTimeout = setTimeout(async () => {
+                this.#reloadTimeout = undefined
+                const oldTitle = this.title
+                this.projectTree = await this.loadProjectTree()
+                this.#projectTreeChanged.fire(this.projectTree)
+                if (this.title != oldTitle)
+                    this.#titleChanged.fire(this.title)
+            }, 500)
     }
 }
