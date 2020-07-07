@@ -27,12 +27,11 @@ export class MarkdownParser {
 
         const actions = {
             heading_open(token:Token, source?:Range) {
-                headingLevel++
+                headingLevel = parseInt(token.tag.substr(1)) // the end of h1, h2 etc.
                 listener.enterHeading?.(headingLevel, source)
             },
             heading_close(token:Token, source?:Range) {
                 listener.leaveHeading?.(headingLevel, source)
-                headingLevel--
             },
 
             bullet_list_open(token:Token, source?:Range) {

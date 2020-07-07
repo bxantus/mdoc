@@ -5,6 +5,7 @@ import markdownItAnchor from "markdown-it-anchor"
 import hljs from 'highlight.js'
 import { Document } from '../source/document';
 import * as path from 'path';
+import slugify from '../util/slugify'
 
 interface Project {
     source: SourceAdapter
@@ -43,7 +44,7 @@ class DocViewer implements vscode.Disposable {
     }
 
     #documentWatch:vscode.Disposable|undefined
-    async openDocument(source:SourceAdapter, docUri:string, title:string) {
+    private async openDocument(source:SourceAdapter, docUri:string, title:string) {
         const document = await source.getDocument(docUri)
         if (document) {
             this.loadDocumentInViewer(document, title, {scrollToTop: true}) 
@@ -71,7 +72,7 @@ class DocViewer implements vscode.Disposable {
         }))
     }
 
-    get viewerPanel() {
+    private get viewerPanel() {
         if (this.#viewerPanel)
             return this.#viewerPanel
         else {
@@ -80,7 +81,7 @@ class DocViewer implements vscode.Disposable {
         }
     }
 
-    loadDocumentInViewer(document:Document, title:string, options:{ scrollToTop:boolean }) {
+    private loadDocumentInViewer(document:Document, title:string, options:{ scrollToTop:boolean }) {
         const md = new MarkdownIt({
             highlight(str, lang) {
                 if (lang && hljs.getLanguage(lang)) {
@@ -93,18 +94,19 @@ class DocViewer implements vscode.Disposable {
             },
             linkify: true
         })
-        // todo: should add/inject to the generated html:
-        //    - import of extra functionality from `www/viewer.js` (communication, opening links etc.)
-
+        
         // internal links do not work by default, markdownItAnchor adds ids to the headings in the document, and they will work out of the box
-        // NOTE: should use the same slugify function in the toc generator which should generate the same internal links!
+        // NOTE: it uses the same slugify function as the toc generator, so they generate the same internal links!
+        //       if no toc will be generated for some headers, slugify should be called for them as well, otherwise duplicates won't be handled the same
         const asWebviewUri = (path:string) => this.viewerPanel.webview.asWebviewUri(vscode.Uri.file(path))
         
         const markdownCss = asWebviewUri(path.join(this.#extensionPath, "www", "markdown.css"))
         const hiliteCss = asWebviewUri(path.join(this.#extensionPath, "www", "highlight.css"))
+        const viewerCss = asWebviewUri(path.join(this.#extensionPath, "www", "viewer.css"))
         const viewerJs = asWebviewUri(path.join(this.#extensionPath, "www", "viewer.js"))
         
-        md.use(markdownItAnchor, {level: 1})
+        let slugs = new Map<string, number>()
+        md.use(markdownItAnchor, {level: 1, slugify: (s:string) => slugify(s, slugs)})
         const markdownContent = md.render(document.markdownContent.toString())
 
         const htmlContent = 
@@ -112,10 +114,17 @@ class DocViewer implements vscode.Disposable {
             <head>
                 <link rel="stylesheet" type="text/css" href="${markdownCss}">
                 <link rel="stylesheet" type="text/css" href="${hiliteCss}">
+                <link rel="stylesheet" type="text/css" href="${viewerCss}">
                 <script src="${viewerJs}"></script>
             </head>
             <body>
-                ${markdownContent}
+                <div id="__markdown-content">
+                    ${markdownContent}
+                </div>
+                <div id="__side">
+                    <div class="uppercase">In this document</div>
+                    ${this.generateTocHtml(document)}
+                </div>
             </body>
             `
         
@@ -124,6 +133,29 @@ class DocViewer implements vscode.Disposable {
         this.viewerPanel.reveal()
         if (options.scrollToTop)
             this.viewerPanel.webview.postMessage({command:"scrollToTop"})
+    }
+
+    private generateTocHtml(document:Document) {
+        const headings = document.getHeadings()
+        let html = "<ul>\n"
+        let headingLevel = 1
+        let slugs = new Map<string, number>()
+        for (const h of headings) {
+            if (h.level > headingLevel) {
+                // open new list inside
+                html += "<li>\n<ul>\n".repeat(h.level - headingLevel)
+            } else if (h.level < headingLevel) { // close lists
+                html += "</ul>\n</li>\n".repeat(headingLevel - h.level)
+            }
+            html += `<li><a title="${h.title}" href="#${slugify(h.title, slugs)}">${h.title}</a></li>\n`
+            headingLevel = h.level
+        }
+        // close remaining headings
+        if (headingLevel > 1)
+            html += "</ul>\n</li>\n".repeat(headingLevel - 1)
+        html += "</ul>\n" // close outer heading
+        
+        return html
     }
 
     #viewerPanel:vscode.WebviewPanel | undefined
