@@ -2,7 +2,13 @@
 	"name": "xdoc",
 	"displayName": "xdoc",
 	"description": "markdown documentation viewer",
-	"version": "0.0.1",
+	"version": "1.0.0-alpha.1",
+	"publisher": "bxantus",
+	"author": {
+		"name": "Botond Xantus",
+		"email": "drx.trash@gmail.com"
+	},
+	"icon": "media/icon.png",
 	"engines": {
 		"vscode": "^1.46.0"
 	},
