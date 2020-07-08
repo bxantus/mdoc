@@ -226,7 +226,7 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
         if (node) {
             return node.projectNode.children.map(pnode => ({ projectNode: pnode, parent: node }))
         } else {
-            return this.docViewer.projects.map(proj => ({ projectNode: { children: proj.projectTree.children, label: proj.source.title }, source:proj.source  }))
+            return this.docViewer.projects.map(proj => ({ projectNode: { children: proj.projectTree.children, label: proj.source.title, docUri: 'README.md'  }, source:proj.source  }))
         }
     }
 
