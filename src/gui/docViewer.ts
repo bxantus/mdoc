@@ -172,6 +172,9 @@ class DocViewer implements vscode.Disposable {
             light: vscode.Uri.file(path.join(this.#extensionPath, "media/library_books-light.svg")),
             dark: vscode.Uri.file(path.join(this.#extensionPath, "media/library_books-dark.svg")),
         }
+        panel.onDidDispose(()=> {
+            this.#viewerPanel = undefined // remove the cached panel, a new one will open next time
+        })
         return panel
     }
 }
