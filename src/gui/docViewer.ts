@@ -27,6 +27,7 @@ class DocViewer implements vscode.Disposable {
             sub.dispose()
         if (this.#documentWatch)
             this.#documentWatch.dispose()
+        this.#currentSource = undefined
     }
     
     init(context:vscode.ExtensionContext) {
@@ -44,9 +45,13 @@ class DocViewer implements vscode.Disposable {
     }
 
     #documentWatch:vscode.Disposable|undefined
+    #currentSource:SourceAdapter|undefined // the currently opened document's source. maybe later this will be attached to the given webview panel (if multiple panels are added)
+    #currentUri:string = "" // used to resolve internal links against
     private async openDocument(source:SourceAdapter, docUri:string, title:string) {
         const document = await source.getDocument(docUri)
         if (document) {
+            this.#currentSource = source
+            this.#currentUri = `mdoc:///${docUri}`
             this.loadDocumentInViewer(document, title, {scrollToTop: true}) 
             this.#documentWatch?.dispose() // dispose old watch
             this.#documentWatch = source.watchDocument(docUri, async ()=> {
@@ -92,7 +97,8 @@ class DocViewer implements vscode.Disposable {
             
                 return ''; // use external default escaping
             },
-            linkify: true
+            linkify: true,
+            html: true
         })
         
         // internal links do not work by default, markdownItAnchor adds ids to the headings in the document, and they will work out of the box
@@ -130,9 +136,11 @@ class DocViewer implements vscode.Disposable {
         
         this.viewerPanel.webview.html = htmlContent
         this.viewerPanel.title = title
-        this.viewerPanel.reveal()
-        if (options.scrollToTop)
+        
+        if (options.scrollToTop) { // refresh doesn't scroll nor reveals the panel
             this.viewerPanel.webview.postMessage({command:"scrollToTop"})
+            this.viewerPanel.reveal()
+        }
     }
 
     private generateTocHtml(document:Document) {
@@ -174,6 +182,15 @@ class DocViewer implements vscode.Disposable {
         }
         panel.onDidDispose(()=> {
             this.#viewerPanel = undefined // remove the cached panel, a new one will open next time
+            this.#currentSource = undefined
+        })
+        panel.webview.onDidReceiveMessage(message=> {
+            if (message.command == "openLink" && this.#currentSource) {
+                // todo: should check href's scheme, if it is http or https, we can download the doc instead aka.(linking to external docs)
+                // todo: should reveal doc in the tree, needs getParent and better node structuring (see the other todo)
+                const docUrl = new URL(message.href, this.#currentUri)
+                this.openDocument(this.#currentSource, docUrl.pathname.substr(1), message.title)
+            }
         })
         return panel
     }
@@ -226,6 +243,8 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
     }
 
     getChildren(node:Node | undefined) {
+        // todo: generate mapping of nodes from projectTree at the beginning (or when adding new projects)
+        //       this simply will traverse the tree
         if (node) {
             return node.projectNode.children.map(pnode => ({ projectNode: pnode, parent: node }))
         } else {

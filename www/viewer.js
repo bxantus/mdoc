@@ -7,17 +7,20 @@ document.addEventListener("click", e=>{
         return;
     let t = e.target;
     for (; t; ) {
-        if (t.tagName && "A" === t.tagName && t.href) {
-            if (t.getAttribute("href").startsWith("#"))
+        const href = t.getAttribute("href");
+        if (t.tagName && "A" === t.tagName && href) {
+            if (href.startsWith("#"))
                 return;
-            if (["http", "https"].some(e=>t.href.startsWith(e))) // check some scheme types, which should open in external browser
+            if (["http", "https"].some(e=>href.startsWith(e))) // check some scheme types, which should open in external browser
                 return;
-            const n = t.getAttribute("data-href") || t.getAttribute("href");
-            return /^[a-z\-]+:/i.test(n) ? 0 : (vscode.postMessage("openLink", {
-                href: n
-            }),
-            e.preventDefault(),
-            e.stopPropagation())
+            
+            return (vscode.postMessage({
+                        command: "openLink",
+                        href,
+                        title: t.textContent 
+                    }),
+                    e.preventDefault(),
+                    e.stopPropagation())
         }
         t = t.parentNode
     }
