@@ -2,11 +2,13 @@ import { MarkdownParser, ParseListener } from "../parser/mdParser";
 import { Range, Position } from "vscode";
 
 export class Document {
+    url:string // document's fully resolved url, all internal links should be resolved relative to this one
     markdownContent:Buffer
      // some kind of functionality would be beneficial to query the first few paragraphs of a heading
 
-    constructor(data:{markdownContent:Buffer}) {
+    constructor(data:{markdownContent:Buffer, url:string}) {
         this.markdownContent = data.markdownContent
+        this.url = data.url
     }
 
     #headings:Heading[]|undefined 

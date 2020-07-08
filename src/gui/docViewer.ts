@@ -75,6 +75,7 @@ class DocViewer implements vscode.Disposable {
             proj.projectTree = newTree
             this.projectProvider?.changed() // todo: this may be a finer grained change, if projectProvider caches tree nodes
         }))
+        // todo: if vebview panel is active, we should dispose it and recreate, as a new localResource should be added
     }
 
     private get viewerPanel() {
@@ -100,6 +101,24 @@ class DocViewer implements vscode.Disposable {
             linkify: true,
             html: true
         })
+        const defaultImageRenderer = md.renderer.rules.image
+        md.renderer.rules.image = (tokens, idx, options, env, self) => {
+            const token = tokens[idx]
+            const srcIndex = token.attrIndex('src')
+            let src = token?.attrs?.[srcIndex][1] 
+            if (src) {
+                // resolve src relative to document's full URL
+                try {
+                    const resolvedUrl = new URL(src, document.url)
+                    src = resolvedUrl.toString()
+                    if (resolvedUrl.protocol == "file:")
+                        src = this.viewerPanel.webview.asWebviewUri(vscode.Uri.parse(src)).toString();
+                    (token.attrs as any)[srcIndex][1] = src
+                } catch (__) { /* URL parse error */  }
+            }
+
+            return defaultImageRenderer?.(tokens, idx, options, env, self) ?? ""
+        }
         
         // internal links do not work by default, markdownItAnchor adds ids to the headings in the document, and they will work out of the box
         // NOTE: it uses the same slugify function as the toc generator, so they generate the same internal links!
@@ -173,8 +192,11 @@ class DocViewer implements vscode.Disposable {
             'XDoc viewer',
             vscode.ViewColumn.Active,
             {
-                enableScripts: true
-            }
+                enableScripts: true,
+                localResourceRoots: [vscode.Uri.file(this.#extensionPath), 
+                                     ...this.projects.filter(proj => proj.source.rootUrl.protocol == "file:")
+                                     .map(proj => vscode.Uri.parse(proj.source.rootUrl.toString()))]
+            },
         );       
         panel.iconPath = {
             light: vscode.Uri.file(path.join(this.#extensionPath, "media/library_books-light.svg")),

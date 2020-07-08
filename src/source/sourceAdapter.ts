@@ -13,6 +13,7 @@ import { Event, Disposable } from "vscode";
  **/ 
 export interface SourceAdapter extends Disposable {
     readonly title:string
+    readonly rootUrl:URL // root URL of source's content (note this should be the local filesystem url, for cloned git repos)
     getProjectTree():Promise<ProjectTree>
     getDocument(uri:string):Promise<Document|undefined>
 

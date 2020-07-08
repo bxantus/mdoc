@@ -9,6 +9,8 @@ import { EventEmitter } from "vscode";
 export class GitSource implements SourceAdapter {
     private path:string = "" // path to the root of the repository on the file system
     #title = "<no title>"
+    #rootUrl:URL
+    get rootUrl() { return this.#rootUrl }
 
     constructor(location:URL) {
         // location may be a hard disk location, also .git url to the repository
@@ -16,6 +18,7 @@ export class GitSource implements SourceAdapter {
         if (location.protocol == "file:") {
             this.path = decodeURIComponent(location.pathname).substr(1)
         }
+        this.#rootUrl = location
         this.init()
     }
 
@@ -37,7 +40,7 @@ export class GitSource implements SourceAdapter {
         const fileName = `${this.path}/${uri}`
         try {
             const buf = await fs.readFile(fileName)
-            return new Document({ markdownContent: buf })
+            return new Document({ markdownContent: buf, url: `file:///${fileName}` })
 
         } catch(err) {
             // document may not exist
