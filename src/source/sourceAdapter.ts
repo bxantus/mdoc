@@ -2,6 +2,7 @@ import { URL } from "url";
 import { Document } from "./document";
 import { DocSearchIndex } from "../search/docSearch";
 import { Event, Disposable } from "vscode";
+import fetch from "node-fetch"
 
 /**
  * Represents the source for a documentation project.
@@ -34,4 +35,12 @@ export interface TreeNode {
     label:string
     docUri?:string // some nodes (mostly groups, do not have an asssociated document)
     children:TreeNode[]
+}
+
+/// gets the document either form the adapter or from the web (in the case of http or https urls)
+export async function getDocument(source:SourceAdapter, docUri:string):Promise<Document|undefined> {
+    if (docUri.startsWith("http://") || docUri.startsWith("https://")) { // should download it from the net
+        const buf = await fetch(docUri).then(res => res.buffer())
+        return new Document({markdownContent:buf, url:docUri, source:undefined /*marks this document comes from an external source*/})
+    } else return source.getDocument(docUri)
 }

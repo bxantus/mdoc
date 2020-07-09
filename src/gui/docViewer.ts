@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { SourceAdapter, TreeNode as ProjectTreeNode, ProjectTree, TreeNode } from '../source/sourceAdapter';
+import { SourceAdapter, ProjectTree, TreeNode, getDocument } from '../source/sourceAdapter';
 import MarkdownIt from "markdown-it";
 import markdownItAnchor from "markdown-it-anchor"
 import hljs from 'highlight.js'
@@ -47,16 +47,18 @@ class DocViewer implements vscode.Disposable {
     #current:{source:SourceAdapter, uri:string, title:string}|undefined // info about currently opened doc. maybe later this will be attached to the given webview panel (if multiple panels are added)
 
     private async openDocument(source:SourceAdapter, docUri:string, title:string) {
-        const document = await source.getDocument(docUri)
+        const document = await getDocument(source, docUri)
         if (document) {
             this.#current = { source, uri: docUri, title }
             this.loadDocumentInViewer(document, title, {scrollToTop: true}) 
             this.#documentWatch?.dispose() // dispose old watch
-            this.#documentWatch = source.watchDocument(docUri, async ()=> {
-                const newDoc = await source.getDocument(docUri)
-                if (newDoc)
-                    this.loadDocumentInViewer(newDoc, title, {scrollToTop: false}) 
-            })
+            if (document.source == source) { // document may have external source, like a https:// uri for someting external
+                this.#documentWatch = source.watchDocument(docUri, async ()=> {
+                    const newDoc = await source.getDocument(docUri)
+                    if (newDoc)
+                        this.loadDocumentInViewer(newDoc, title, {scrollToTop: false}) 
+                })
+            }
         }
         
     }
@@ -217,7 +219,6 @@ class DocViewer implements vscode.Disposable {
         })
         panel.webview.onDidReceiveMessage(message=> {
             if (message.command == "openLink" && this.#current) {
-                // todo: should check href's scheme, if it is http or https, we can download the doc instead aka.(linking to external docs)
                 const base = /^[a-z][a-z\d.+-]+:/i.test(this.#current.uri) ? this.#current.uri : `mdoc:///${this.#current.uri}` // if current has no scheme, we add one, otherwise URL parse fails
                 const docUrl = new URL(message.href, base)
                 // reveal doc in the tree, if it is found in sidebar

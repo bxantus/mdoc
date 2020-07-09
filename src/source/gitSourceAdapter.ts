@@ -40,7 +40,7 @@ export class GitSource implements SourceAdapter {
         const fileName = `${this.path}/${uri}`
         try {
             const buf = await fs.readFile(fileName)
-            return new Document({ markdownContent: buf, url: `file:///${fileName}` })
+            return new Document({ markdownContent: buf, url: `file:///${fileName}`, source: this })
 
         } catch(err) {
             // document may not exist

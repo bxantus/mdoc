@@ -6,7 +6,7 @@ export class MarkdownParser {
     // NOTE: currently using markIt for parsing, this may change in the future, with a hand written parser
     md:MarkdownIt
     constructor(private buf:Buffer) {
-        this.md = new MarkdownIt()
+        this.md = new MarkdownIt({html: true, linkify:true})
     }
 
     parse(listener:ParseListener) {
