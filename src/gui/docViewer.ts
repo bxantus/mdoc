@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { SourceAdapter, TreeNode as ProjectTreeNode, ProjectTree } from '../source/sourceAdapter';
+import { SourceAdapter, TreeNode as ProjectTreeNode, ProjectTree, TreeNode } from '../source/sourceAdapter';
 import MarkdownIt from "markdown-it";
 import markdownItAnchor from "markdown-it-anchor"
 import hljs from 'highlight.js'
@@ -35,10 +35,10 @@ class DocViewer implements vscode.Disposable {
         this.projectTree = vscode.window.createTreeView<Node>("xdocProjects", {treeDataProvider: this.projectProvider})
 
         context.subscriptions.push(vscode.commands.registerCommand("xdoc.openFromSidebar", async (node: Node) => {
-            const docUri = node.projectNode.docUri
-            const source = getSourceForNode(node)
+            const docUri = node.docUri
+            const source = node.source
             if (docUri && source) {
-                this.openDocument(source, docUri, node.projectNode.label)
+                this.openDocument(source, docUri, node.label)
             }
         }))
     }
@@ -68,11 +68,11 @@ class DocViewer implements vscode.Disposable {
             subs: []
         }
         this.projects.push(proj)
-        this.projectProvider?.changed()
+        this.projectProvider?.projectAdded(proj)
         
         proj.subs.push(proj.source.onProjectTreeChanged((newTree)=> {
             proj.projectTree = newTree
-            this.projectProvider?.changed() // todo: this may be a finer grained change, if projectProvider caches tree nodes
+            this.projectProvider?.projectChanged(proj) 
         }))
 
         // if vebview panel is active, we should dispose it and recreate, as a new localResource should be added
@@ -230,42 +230,55 @@ class DocViewer implements vscode.Disposable {
 
 export const docViewer = new DocViewer();
 
-interface Node { // a node in the project tree sidebar
+class Node { // a node in the project tree sidebar
     parent?: Node
-    projectNode:ProjectTreeNode
-    source?:SourceAdapter
-}
+    label:string
+    docUri?:string
+    #source?:SourceAdapter
 
-function getSourceForNode(node:Node) {
-    let n:Node|undefined = node
-    for (;n; n = n.parent) {
-        if (n.source) return n.source
+    children: Node[]
+
+    constructor(source:{label:string, docUri?:string, parent?:Node, children:TreeNode[], source?:SourceAdapter}) {
+        this.parent = source.parent
+        this.label = source.label
+        this.#source = source.source
+        this.docUri = source.docUri
+        this.children = source.children.map(tn => new Node({parent:this, label: tn.label, docUri: tn.docUri, children: tn.children}))
+    }
+
+    get depth() {
+        let depth = 1
+        let node:Node = this
+        for (;node.parent; node = node.parent)
+            ++depth
+        return depth
+    }
+    get source() {
+        let n:Node|undefined = this
+        for (;n; n = n.parent) {
+            if (n.#source) return n.#source
+        }
     }
 }
 
 class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
     #onDidChangeTreeData = new vscode.EventEmitter<Node|undefined>()
     get onDidChangeTreeData() { return this.#onDidChangeTreeData.event }
+    private nodes:Node[] = []
 
     constructor(private docViewer:DocViewer) {
 
     }
     
-    private getNodeDepth(node:Node) {
-        let depth = 1
-        for (;node.parent; node = node.parent)
-            ++depth
-        return depth
-    }
+    
 
     getTreeItem(node:Node) {
         // items on the first two levels will be open, otherwise collapsed
-        const depth = this.getNodeDepth(node)
         let collapsibleState = vscode.TreeItemCollapsibleState.None
-        if (node.projectNode.children.length > 0) {
-            collapsibleState = depth <= 2 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed
+        if (node.children.length > 0) {
+            collapsibleState = node.depth <= 2 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed
         } else if (!node.parent) collapsibleState = vscode.TreeItemCollapsibleState.Expanded // root project node
-        const item = new vscode.TreeItem(node.projectNode.label, collapsibleState)
+        const item = new vscode.TreeItem(node.label, collapsibleState)
         item.command = {
             command: "xdoc.openFromSidebar",
             title: "Open document",
@@ -275,16 +288,30 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
     }
 
     getChildren(node:Node | undefined) {
-        // todo: generate mapping of nodes from projectTree at the beginning (or when adding new projects)
-        //       this simply will traverse the tree
         if (node) {
-            return node.projectNode.children.map(pnode => ({ projectNode: pnode, parent: node }))
+            return node.children
         } else {
-            return this.docViewer.projects.map(proj => ({ projectNode: { children: proj.projectTree.children, label: proj.source.title, docUri: 'README.md'  }, source:proj.source  }))
+            return this.nodes
         }
     }
 
     changed() {
         this.#onDidChangeTreeData.fire(undefined)
     }
+
+    projectAdded(proj:Project) {
+        this.nodes.push(new Node({ label: proj.source.title, docUri: 'README.md', 
+                                   source:proj.source, children: proj.projectTree.children}))
+        
+        this.changed()   
+    }
+
+    projectChanged(proj:Project) {
+        const idx = this.nodes.findIndex(n => n.source == proj.source)
+        this.nodes[idx] = new Node({ label: proj.source.title, docUri: 'README.md', 
+                                   source:proj.source, children: proj.projectTree.children})
+        this.changed()   
+    }
+
+    
 }
