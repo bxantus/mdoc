@@ -6,28 +6,27 @@ import hljs from 'highlight.js'
 import { Document } from '../source/document';
 import * as path from 'path';
 import slugify from '../util/slugify'
+import dispose from '../util/dispose';
 
 interface Project {
     source: SourceAdapter
     projectTree:  ProjectTree
+    subs: vscode.Disposable[]
 }
 
 class DocViewer implements vscode.Disposable {
     projects:Project[] = []
     projectProvider:ProjectTreeProvider|undefined
     projectTree:vscode.TreeView<Node>|undefined
-    #subs:vscode.Disposable[] = []
     #extensionPath = ""
     
     constructor() {
     }
 
     dispose() {
-        for (const sub of this.#subs)
-            sub.dispose()
-        if (this.#documentWatch)
-            this.#documentWatch.dispose()
-        this.#currentSource = undefined
+        dispose(...this.projects.map(proj => proj.subs))
+        dispose(this.#documentWatch)
+        this.#current = undefined
     }
     
     init(context:vscode.ExtensionContext) {
@@ -45,13 +44,12 @@ class DocViewer implements vscode.Disposable {
     }
 
     #documentWatch:vscode.Disposable|undefined
-    #currentSource:SourceAdapter|undefined // the currently opened document's source. maybe later this will be attached to the given webview panel (if multiple panels are added)
-    #currentUri:string = "" // used to resolve internal links against
+    #current:{source:SourceAdapter, uri:string, title:string}|undefined // info about currently opened doc. maybe later this will be attached to the given webview panel (if multiple panels are added)
+
     private async openDocument(source:SourceAdapter, docUri:string, title:string) {
         const document = await source.getDocument(docUri)
         if (document) {
-            this.#currentSource = source
-            this.#currentUri = `mdoc:///${docUri}`
+            this.#current = { source, uri: docUri, title }
             this.loadDocumentInViewer(document, title, {scrollToTop: true}) 
             this.#documentWatch?.dispose() // dispose old watch
             this.#documentWatch = source.watchDocument(docUri, async ()=> {
@@ -66,16 +64,27 @@ class DocViewer implements vscode.Disposable {
     async addProject(projSource:SourceAdapter) {
         const proj:Project = {
             source: projSource,
-            projectTree: await projSource.getProjectTree()
+            projectTree: await projSource.getProjectTree(),
+            subs: []
         }
         this.projects.push(proj)
         this.projectProvider?.changed()
-        // todo: remove subscription, when project changes
-        this.#subs.push(proj.source.onProjectTreeChanged((newTree)=> {
+        
+        proj.subs.push(proj.source.onProjectTreeChanged((newTree)=> {
             proj.projectTree = newTree
             this.projectProvider?.changed() // todo: this may be a finer grained change, if projectProvider caches tree nodes
         }))
-        // todo: if vebview panel is active, we should dispose it and recreate, as a new localResource should be added
+
+        // if vebview panel is active, we should dispose it and recreate, as a new localResource should be added
+        if (this.#viewerPanel) {
+            const wasVisible = this.#viewerPanel.visible
+            const current = this.#current
+            this.#viewerPanel.dispose()
+            this.createViewerPanel()
+            if (wasVisible && current) {
+                this.openDocument(current.source, current.uri, current.title)
+            }
+        }
     }
 
     private get viewerPanel() {
@@ -204,14 +213,15 @@ class DocViewer implements vscode.Disposable {
         }
         panel.onDidDispose(()=> {
             this.#viewerPanel = undefined // remove the cached panel, a new one will open next time
-            this.#currentSource = undefined
+            this.#current = undefined
         })
         panel.webview.onDidReceiveMessage(message=> {
-            if (message.command == "openLink" && this.#currentSource) {
+            if (message.command == "openLink" && this.#current) {
                 // todo: should check href's scheme, if it is http or https, we can download the doc instead aka.(linking to external docs)
                 // todo: should reveal doc in the tree, needs getParent and better node structuring (see the other todo)
-                const docUrl = new URL(message.href, this.#currentUri)
-                this.openDocument(this.#currentSource, docUrl.pathname.substr(1), message.title)
+                const base = /^[a-z][a-z\d.+-]+:/i.test(this.#current.uri) ? this.#current.uri : `mdoc:///${this.#current.uri}` // if current has no scheme, we add one, otherwise URL parse fails
+                const docUrl = new URL(message.href, base)
+                this.openDocument(this.#current.source, docUrl.pathname.substr(1), message.title)
             }
         })
         return panel
