@@ -218,9 +218,12 @@ class DocViewer implements vscode.Disposable {
         panel.webview.onDidReceiveMessage(message=> {
             if (message.command == "openLink" && this.#current) {
                 // todo: should check href's scheme, if it is http or https, we can download the doc instead aka.(linking to external docs)
-                // todo: should reveal doc in the tree, needs getParent and better node structuring (see the other todo)
                 const base = /^[a-z][a-z\d.+-]+:/i.test(this.#current.uri) ? this.#current.uri : `mdoc:///${this.#current.uri}` // if current has no scheme, we add one, otherwise URL parse fails
                 const docUrl = new URL(message.href, base)
+                // reveal doc in the tree, if it is found in sidebar
+                const documentNode = this.projectProvider?.getNodeForUri(this.#current.source, docUrl.pathname.substr(1) )
+                if (documentNode)
+                    this.projectTree?.reveal(documentNode)
                 this.openDocument(this.#current.source, docUrl.pathname.substr(1), message.title)
             }
         })
@@ -261,17 +264,23 @@ class Node { // a node in the project tree sidebar
     }
 }
 
+function *eachNode(node:Node):Generator<Node> {
+    yield node;
+    for (const child of node.children) {
+        yield *eachNode(child)
+    }
+}
+
 class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
     #onDidChangeTreeData = new vscode.EventEmitter<Node|undefined>()
     get onDidChangeTreeData() { return this.#onDidChangeTreeData.event }
     private nodes:Node[] = []
+    private nodesByUri = new Map<SourceAdapter, Map<string, Node>>()
 
     constructor(private docViewer:DocViewer) {
 
     }
     
-    
-
     getTreeItem(node:Node) {
         // items on the first two levels will be open, otherwise collapsed
         let collapsibleState = vscode.TreeItemCollapsibleState.None
@@ -295,14 +304,23 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
         }
     }
 
+    getParent(node:Node) {
+        return node.parent
+    }
+
     changed() {
         this.#onDidChangeTreeData.fire(undefined)
+    }
+
+    getNodeForUri(source:SourceAdapter, docUri:string) {
+        return this.nodesByUri.get(source)?.get(docUri)
     }
 
     projectAdded(proj:Project) {
         this.nodes.push(new Node({ label: proj.source.title, docUri: 'README.md', 
                                    source:proj.source, children: proj.projectTree.children}))
         
+        this.updateUriMappings(proj.source, this.nodes[this.nodes.length - 1])
         this.changed()   
     }
 
@@ -310,8 +328,16 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
         const idx = this.nodes.findIndex(n => n.source == proj.source)
         this.nodes[idx] = new Node({ label: proj.source.title, docUri: 'README.md', 
                                    source:proj.source, children: proj.projectTree.children})
+        this.updateUriMappings(proj.source, this.nodes[idx])
         this.changed()   
     }
 
-    
+    private updateUriMappings(source:SourceAdapter, rootNode:Node) {
+        const mappings = new Map<string, Node>()
+        for (const node of eachNode(rootNode)) {
+            if (node.docUri)
+                mappings.set(node.docUri, node)
+        }
+        this.nodesByUri.set(source, mappings)
+    }
 }
