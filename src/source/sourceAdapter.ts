@@ -24,7 +24,6 @@ export interface SourceAdapter extends Disposable {
 
     onProjectTreeChanged:Event<ProjectTree>
     onTitleChanged:Event<string>
-    // todo: add refresh and initialize functionality, a loading property, or event (should notify after loaded)
 }
 
 export interface ProjectTree {
@@ -32,7 +31,6 @@ export interface ProjectTree {
 }
 
 export interface TreeNode {
-    // todo: do we need an id member (for ex. to reference something from the tree)
     label:string
     docUri?:string // some nodes (mostly groups, do not have an asssociated document)
     children:TreeNode[]

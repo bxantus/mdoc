@@ -85,16 +85,29 @@ export class GitSource implements SourceAdapter {
     #titleChanged = new EventEmitter<string>()
 
     private async loadProjectTree() {
-        // fetch index.md and load structure from it
-        const contents = await fs.readFile(`${this.path}/index.md`) // todo: catch errors, file may not exist!
+        try {
+            // fetch index.md and load structure from it
+            const contents = await fs.readFile(`${this.path}/index.md`) 
+            const res = this.parseProjectTree(contents)
+            this.#title = res.title    
+            return res.tree
+        } catch (__) {
+            // file doesn't exist    
+            // todo:  walk the directories in the repository and build from that
+        } 
+        
+        this.#title = this.path.substr(this.path.lastIndexOf('/') + 1) // title will become the directory of repo
+        return { children:[] }
+    }
+
+    private parseProjectTree(contents:Buffer) {
         const parser = new MarkdownParser(contents)
         let title = this.#title
         const tree:ProjectTree = { children:[] }
         let activeTree:{children:TreeNode[]} = tree
         let currNode:TreeNode|undefined 
-        const nodeStack:{children:TreeNode[]}[] = []
         // add nodeStack so we can traverse the tree while lists are closed, opened
-
+        const nodeStack:{children:TreeNode[]}[] = []
 
         let listener:ParseListener = {  
             enterHeading(level) {
@@ -138,10 +151,7 @@ export class GitSource implements SourceAdapter {
         }
         
         parser.parse(listener)
-        this.#title = title
-        // todo: if no index.md is present: walk the directories in the repository and build from that
-
-        return tree
+        return {tree ,title}
     }
 
     #reloadTimeout:NodeJS.Timeout|undefined
