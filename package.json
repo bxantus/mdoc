@@ -42,8 +42,21 @@
 				"command": "xdoc.add.fromFilesystem",
 				"title": "Add documentation project from the filesystem",
 				"group": "xdoc"
+			},
+			{
+				"command": "xdoc.project.update",
+				"title": "Update project"
 			}
 		],
+		"menus": {
+			"view/title": [
+				{
+					"command": "xdoc.project.update", 
+					"when": "view == xdocProjects",
+					"group": "navigation"
+				}
+			]
+		},
 		"viewsWelcome": [
 			{
 				"view": "xdocProjects",

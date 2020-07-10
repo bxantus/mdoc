@@ -21,6 +21,9 @@ export interface SourceAdapter extends Disposable {
     /// returns a watcher. call dispose on it, to stop watching
     watchDocument(uri:string, onChange:()=>void):Disposable
 
+    
+    update():Promise<UpdateResult>
+
     searchIndex():AsyncGenerator<DocSearchIndex, void, unknown>
 
     onProjectTreeChanged:Event<ProjectTree>
@@ -35,6 +38,11 @@ export interface TreeNode {
     label:string
     docUri?:string // some nodes (mostly groups, do not have an asssociated document)
     children:TreeNode[]
+}
+
+export interface UpdateResult {
+    ok:boolean
+    errorMessage?:string
 }
 
 /// gets the document either form the adapter or from the web (in the case of http or https urls)

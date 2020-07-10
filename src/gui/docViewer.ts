@@ -41,6 +41,14 @@ class DocViewer implements vscode.Disposable {
                 this.openDocument(source, docUri, node.label)
             }
         }))
+        // todo: this command should be registered for project nodes!, with an icon (item/context)
+        context.subscriptions.push(vscode.commands.registerCommand("xdoc.project.update", async ()=> {
+            // todo: display updating notification(maybe on the project title, or in status bar?)
+            const updateRes = await this.projects[0].source.update()
+            if (!updateRes.ok) {
+                vscode.window.showErrorMessage(`Couldn't update project. ${updateRes.errorMessage}`)
+            }
+        }))
     }
 
     #documentWatch:vscode.Disposable|undefined

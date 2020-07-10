@@ -1,10 +1,11 @@
-import { SourceAdapter, ProjectTree, TreeNode } from "./sourceAdapter"
+import { SourceAdapter, ProjectTree, TreeNode, UpdateResult } from "./sourceAdapter"
 import { URL } from "url";
 import { DocSearchIndex } from "../search/docSearch";
 import { Document } from "./document";
 import {promises as fs, watch as fsWatch, FSWatcher} from "fs"
 import { MarkdownParser, ParseListener } from "../parser/mdParser";
 import { EventEmitter } from "vscode";
+import { ChildProcess, spawn } from "child_process";
 
 export class GitSource implements SourceAdapter {
     private path:string = "" // path to the root of the repository on the file system
@@ -165,5 +166,33 @@ export class GitSource implements SourceAdapter {
                 if (this.title != oldTitle)
                     this.#titleChanged.fire(this.title)
             }, 500)
+    }
+
+    update() {
+        // todo: generalize git process spawning with promise interface, and use that here
+        return new Promise<UpdateResult>((resolve, reject)=>{
+            const gitProcess = spawn("git pull", { 
+                shell:true,
+                cwd: this.path,
+                stdio: [undefined, undefined, 'pipe' ] // stderr will be read
+            })
+            let errorMessage = ""
+            gitProcess.stderr.on('data', (chunk) => {
+                errorMessage += chunk.toString()
+            })
+            gitProcess.on('exit', (exitCode, signal) => {
+                if (signal != null) { // process was terminated
+                    resolve({ok: false, errorMessage: `pull was terminated by signal ${signal}`})
+                } else {
+                    if (exitCode == 0) { // normal run
+                        resolve({ok: true})
+                    } else resolve({ok: false, errorMessage: errorMessage})
+                }
+            })
+            gitProcess.on('error', (err) => {
+                resolve({ok: false, errorMessage: `${err.message}`})
+            })
+            
+        })        
     }
 }
