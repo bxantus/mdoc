@@ -11,8 +11,10 @@ document.addEventListener("click", e=>{
         if (t.tagName && "A" === t.tagName && href) {
             if (href.startsWith("#"))
                 return;
-            if (["http", "https"].some(e=>href.startsWith(e))) // check some scheme types, which should open in external browser
-                return;
+            const url = new URL(href, "file:///") // `file:///` is added as base, so href is completely resolved, if is relative
+                                                  // won't use the file protocol, just checks http, https and pathname parts
+            if ((url.protocol == "http:" || url.protocol == "https:") && !url.pathname.endsWith(".md")) // check some scheme types, which should open in external browser
+                return;                                                                                 // but .md files will be resolved by xdoc
             
             return (vscode.postMessage({
                         command: "openLink",
