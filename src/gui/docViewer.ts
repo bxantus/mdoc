@@ -221,11 +221,14 @@ class DocViewer implements vscode.Disposable {
             if (message.command == "openLink" && this.#current) {
                 const base = /^[a-z][a-z\d.+-]+:/i.test(this.#current.uri) ? this.#current.uri : `mdoc:///${this.#current.uri}` // if current has no scheme, we add one, otherwise URL parse fails
                 const docUrl = new URL(message.href, base)
+                // the final url is the path part for mdoc urls, otherwise the whole thing (for http, https ex.)
+                const url = docUrl.protocol == "mdoc:" ? docUrl.pathname.substr(1) : docUrl.toString()
                 // reveal doc in the tree, if it is found in sidebar
-                const documentNode = this.projectProvider?.getNodeForUri(this.#current.source, docUrl.pathname.substr(1) )
+                const documentNode = this.projectProvider?.getNodeForUri(this.#current.source, url )
                 if (documentNode)
                     this.projectTree?.reveal(documentNode)
-                this.openDocument(this.#current.source, docUrl.pathname.substr(1), message.title)
+                
+                this.openDocument(this.#current.source, url, message.title)
             }
         })
         return panel
