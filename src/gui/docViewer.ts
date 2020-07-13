@@ -43,8 +43,7 @@ class DocViewer implements vscode.Disposable {
             }
         }))
         context.subscriptions.push(vscode.commands.registerCommand("xdoc.project.update", async (node:Node)=> {
-            // todo: display updating notification(maybe on the project title, or in status bar?)
-            if (node.project) {
+            if (node.project && !node.project.loading) {
                 node.project.loading = true
                 this.projectProvider?.changed(node)
                 const updateRes = await this.projects[0].source.update()
@@ -312,6 +311,8 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
         } else {
             item.iconPath = node.docUri ? new vscode.ThemeIcon("file-text") : new vscode.ThemeIcon("circle-slash")
         }
+        if (node.docUri && (node.docUri.startsWith("http:") || node.docUri.startsWith("https:")))
+            item.iconPath = new vscode.ThemeIcon("link") // linked document
         if (node.project) { // project node
             item.contextValue = "project"
             if (node.project.loading) {
