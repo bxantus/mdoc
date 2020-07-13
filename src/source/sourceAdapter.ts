@@ -1,6 +1,5 @@
 import { URL } from "url";
 import { Document } from "./document";
-import { DocSearchIndex } from "../search/docSearch";
 import { Event, Disposable } from "vscode";
 import fetch from "node-fetch"
 
@@ -21,10 +20,8 @@ export interface SourceAdapter extends Disposable {
     /// returns a watcher. call dispose on it, to stop watching
     watchDocument(uri:string, onChange:()=>void):Disposable
 
-    
-    update():Promise<UpdateResult>
 
-    searchIndex():AsyncGenerator<DocSearchIndex, void, unknown>
+    update():Promise<UpdateResult>
 
     onProjectTreeChanged:Event<ProjectTree>
     onTitleChanged:Event<string>

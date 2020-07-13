@@ -47,12 +47,22 @@
 				"command": "xdoc.project.update",
 				"title": "Update project",
 				"icon": "$(sync)"
+			},
+			{
+				"command": "xdoc.project.search",
+				"title": "Update project",
+				"icon": "$(search)"
 			}
 		],
 		"menus": {
 			"view/item/context": [
 				{
-					"command": "xdoc.project.update", 
+					"command": "xdoc.project.update",
+					"when": "view == xdocProjects && viewItem == project",
+					"group": "inline"
+				},
+				{
+					"command": "xdoc.project.search",
 					"when": "view == xdocProjects && viewItem == project",
 					"group": "inline"
 				}
@@ -75,6 +85,7 @@
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
+		"@types/lunr": "^2.3.3",
 		"@types/markdown-it": "^10.0.1",
 		"@types/mocha": "^7.0.2",
 		"@types/node": "^13.11.0",
@@ -90,6 +101,7 @@
 	},
 	"dependencies": {
 		"highlight.js": "^10.1.1",
+		"lunr": "^2.3.8",
 		"markdown-it": "^11.0.0",
 		"markdown-it-anchor": "^5.3.0",
 		"node-fetch": "^2.6.0"

@@ -1,6 +1,5 @@
 import { SourceAdapter, ProjectTree, TreeNode, UpdateResult } from "./sourceAdapter"
 import { URL } from "url";
-import { DocSearchIndex } from "../search/docSearch";
 import { Document } from "./document";
 import {promises as fs, watch as fsWatch, FSWatcher} from "fs"
 import { MarkdownParser, ParseListener } from "../parser/mdParser";
@@ -57,10 +56,6 @@ export class GitSource implements SourceAdapter {
         return {
             dispose() { watch.close(); }
         }
-    }
-
-    async *searchIndex():AsyncGenerator<DocSearchIndex, void, unknown> {
-
     }
 
     get onProjectTreeChanged() { return this.#projectTreeChanged.event }
