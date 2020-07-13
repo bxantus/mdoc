@@ -12,6 +12,7 @@ interface Project {
     source: SourceAdapter
     projectTree:  ProjectTree
     subs: vscode.Disposable[]
+    loading?:boolean
 }
 
 class DocViewer implements vscode.Disposable {
@@ -41,12 +42,17 @@ class DocViewer implements vscode.Disposable {
                 this.openDocument(source, docUri, node.label)
             }
         }))
-        // todo: this command should be registered for project nodes!, with an icon (item/context)
-        context.subscriptions.push(vscode.commands.registerCommand("xdoc.project.update", async ()=> {
+        context.subscriptions.push(vscode.commands.registerCommand("xdoc.project.update", async (node:Node)=> {
             // todo: display updating notification(maybe on the project title, or in status bar?)
-            const updateRes = await this.projects[0].source.update()
-            if (!updateRes.ok) {
-                vscode.window.showErrorMessage(`Couldn't update project. ${updateRes.errorMessage}`)
+            if (node.project) {
+                node.project.loading = true
+                this.projectProvider?.changed(node)
+                const updateRes = await this.projects[0].source.update()
+                if (!updateRes.ok) {
+                    vscode.window.showErrorMessage(`Couldn't update project. ${updateRes.errorMessage}`)
+                }
+                node.project.loading = false
+                this.projectProvider?.changed(node)
             }
         }))
     }
@@ -249,14 +255,15 @@ class Node { // a node in the project tree sidebar
     parent?: Node
     label:string
     docUri?:string
-    #source?:SourceAdapter
+    project?:Project
 
     children: Node[]
 
-    constructor(source:{label:string, docUri?:string, parent?:Node, children:TreeNode[], source?:SourceAdapter}) {
+    constructor(source:{label:string, docUri?:string, parent?:Node, children:TreeNode[], project?:Project}) {
         this.parent = source.parent
         this.label = source.label
-        this.#source = source.source
+        if (source.project)
+            this.project = source.project
         this.docUri = source.docUri
         this.children = source.children.map(tn => new Node({parent:this, label: tn.label, docUri: tn.docUri, children: tn.children}))
     }
@@ -271,7 +278,7 @@ class Node { // a node in the project tree sidebar
     get source() {
         let n:Node|undefined = this
         for (;n; n = n.parent) {
-            if (n.#source) return n.#source
+            if (n.project) return n.project.source
         }
     }
 }
@@ -300,6 +307,19 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
             collapsibleState = node.depth <= 2 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed
         } else if (!node.parent) collapsibleState = vscode.TreeItemCollapsibleState.Expanded // root project node
         const item = new vscode.TreeItem(node.label, collapsibleState)
+        if (node.children.length) {
+            item.iconPath = node.docUri ? new vscode.ThemeIcon("files") : new vscode.ThemeIcon("file-directory")
+        } else {
+            item.iconPath = node.docUri ? new vscode.ThemeIcon("file-text") : new vscode.ThemeIcon("circle-slash")
+        }
+        if (node.project) { // project node
+            item.contextValue = "project"
+            if (node.project.loading) {
+                item.iconPath = new vscode.ThemeIcon("tree-item-loading")
+                item.description = "loading..."
+            }
+            
+        }
         item.command = {
             command: "xdoc.openFromSidebar",
             title: "Open document",
@@ -320,7 +340,7 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
         return node.parent
     }
 
-    changed() {
+    changed(node?:Node) {
         this.#onDidChangeTreeData.fire(undefined)
     }
 
@@ -330,7 +350,7 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
 
     projectAdded(proj:Project) {
         this.nodes.push(new Node({ label: proj.source.title, docUri: 'README.md', 
-                                   source:proj.source, children: proj.projectTree.children}))
+                                   project:proj, children: proj.projectTree.children}))
         
         this.updateUriMappings(proj.source, this.nodes[this.nodes.length - 1])
         this.changed()   
@@ -339,9 +359,9 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
     projectChanged(proj:Project) {
         const idx = this.nodes.findIndex(n => n.source == proj.source)
         this.nodes[idx] = new Node({ label: proj.source.title, docUri: 'README.md', 
-                                   source:proj.source, children: proj.projectTree.children})
+                                   project:proj, children: proj.projectTree.children})
         this.updateUriMappings(proj.source, this.nodes[idx])
-        this.changed()   
+        this.changed(this.nodes[idx])   
     }
 
     private updateUriMappings(source:SourceAdapter, rootNode:Node) {

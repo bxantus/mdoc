@@ -45,15 +45,16 @@
 			},
 			{
 				"command": "xdoc.project.update",
-				"title": "Update project"
+				"title": "Update project",
+				"icon": "$(sync)"
 			}
 		],
 		"menus": {
-			"view/title": [
+			"view/item/context": [
 				{
 					"command": "xdoc.project.update", 
-					"when": "view == xdocProjects",
-					"group": "navigation"
+					"when": "view == xdocProjects && viewItem == project",
+					"group": "inline"
 				}
 			]
 		},
