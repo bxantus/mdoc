@@ -53,6 +53,8 @@ export class MarkdownParser {
             },
 
             inline(token:Token, source?:Range) {
+                if (listener.inlineText && listener.inlineText(token.content, source))
+                    return
                 if (!token.children) return
                 for (const child of token.children) {
                     performAction(child)
@@ -72,14 +74,24 @@ export class MarkdownParser {
                 link.active = false
             },
 
+            paragraph_open(token:Token, source?:Range) {
+                listener.enterParagraph?.(source)
+            },
+
+            paragraph_colse(token:Token, source?:Range) {
+                listener.leaveParagraph?.(source)
+            },
+
+            fence(token:Token, source?:Range) {
+                listener.code?.(token.content, source)
+            },
+
             text(token:Token, source?:Range) {
                 if (link.active)
                     link.text += token.content
                 else 
                     listener.text?.(token.content, source)
             },
-            // other types: 
-            // - paragraph_open -> ignore
 
         }
         for (let token of tokens) {
@@ -99,6 +111,14 @@ export interface ParseListener {
     enterListItem?:(source?:Range) => void
     leaveListItem?:(source?:Range) => void
     
+    enterParagraph?:(source?:Range) => void
+    leaveParagraph?:(source?:Range) => void
+
+    // if you implement this method, you must state if you processed children elements (return true)
+    // like images, text etc. (because text contains the textual content of these children)
+    inlineText?:(text:string, source?:Range) => boolean
+
     text?: (text:string, source?:Range) => void
     link?: (text:string, href:string, source?:Range) => void
+    code?:(text:string, source?:Range) => void
 }
