@@ -7,10 +7,13 @@ import { Document } from '../source/document';
 import * as path from 'path';
 import slugify from '../util/slugify'
 import dispose from '../util/dispose';
+import { DocSearch } from '../search/docSearch';
 
 interface Project {
     source: SourceAdapter
     projectTree:  ProjectTree
+    docSearch:DocSearch
+    searchState: { query:string }
     subs: vscode.Disposable[]
     loading?:boolean
 }
@@ -54,6 +57,13 @@ class DocViewer implements vscode.Disposable {
                 this.projectProvider?.changed(node)
             }
         }))
+        
+        context.subscriptions.push(vscode.commands.registerCommand("xdoc.project.search", async (node:Node)=> {
+            if (node.project) {
+                // todo: check if search view is already open, also should remember current results
+                this.loadSearchInViewer(node.project)
+            }
+        }))
     }
 
     #documentWatch:vscode.Disposable|undefined
@@ -80,7 +90,9 @@ class DocViewer implements vscode.Disposable {
         const proj:Project = {
             source: projSource,
             projectTree: await projSource.getProjectTree(),
-            subs: []
+            subs: [],
+            docSearch: new DocSearch(projSource),
+            searchState: { query: "" }
         }
         this.projects.push(proj)
         this.projectProvider?.projectAdded(proj)
@@ -209,6 +221,43 @@ class DocViewer implements vscode.Disposable {
         return html
     }
 
+    private loadSearchInViewer(proj:Project) {
+        const asWebviewUri = (path:string) => this.viewerPanel.webview.asWebviewUri(vscode.Uri.file(path))
+        
+        const markdownCss = asWebviewUri(path.join(this.#extensionPath, "www", "markdown.css"))
+        const viewerCss = asWebviewUri(path.join(this.#extensionPath, "www", "viewer.css"))
+        const viewerJs = asWebviewUri(path.join(this.#extensionPath, "www", "viewer.js"))
+        const searchJs = asWebviewUri(path.join(this.#extensionPath, "www", "search.js"))
+        
+        
+        const htmlContent = 
+            `
+            <head>
+                <link rel="stylesheet" type="text/css" href="${markdownCss}">
+                <link rel="stylesheet" type="text/css" href="${viewerCss}">
+                <script src="${viewerJs}"></script>
+                <script src="${searchJs}"></script>
+            </head>
+            <body>
+                <div id="__markdown-content">
+                    <h1>Search<span class="project-title">${proj.source.title}</span></h1>
+                    <input id="searchbox" type="text" value="${proj.searchState.query}" size="20" />
+                    
+                    <div id="results" >
+                    </div>
+                </div>
+        
+            </body>
+            `
+        
+        this.viewerPanel.webview.html = htmlContent
+        this.viewerPanel.title = "Search"
+        
+        
+        this.viewerPanel.webview.postMessage({command:"scrollToTop"})
+        this.viewerPanel.reveal()
+    }
+
     #viewerPanel:vscode.WebviewPanel | undefined
     private createViewerPanel() {
         const panel = vscode.window.createWebviewPanel(
@@ -242,9 +291,27 @@ class DocViewer implements vscode.Disposable {
                     this.projectTree?.reveal(documentNode)
                 
                 this.openDocument(this.#current.source, url, message.title)
+            } else if (message.command == "search") {
+                // todo: should link search with a given project
+                const project = this.projects[0]
+                this.scheduleSearch(project, message.query)
             }
         })
         return panel
+    }
+
+    #searchTimeout:NodeJS.Timeout|undefined
+    scheduleSearch(project:Project, query:string) {
+        if (this.#searchTimeout)
+            clearTimeout(this.#searchTimeout)
+        this.#searchTimeout = setTimeout(async ()=> {
+            this.#searchTimeout = undefined
+            const results = await project.docSearch.search(query)
+            this.viewerPanel.webview.postMessage({
+                command: "searchResults",
+                results
+            })
+        }, 300)    
     }
 }
 

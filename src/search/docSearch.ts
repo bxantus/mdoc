@@ -44,22 +44,23 @@ export class DocSearch {
 
         // indexing ready, can run the search
         const results =  this.lunrIndex.search(query)
-        let idx = 0
         console.log(`Results (${results.length})`)
-        for (const res of results) {
+        return results.map(res => {
             const doc = this.docsById.get(parseInt(res.ref)) as DocumentData
-            console.log(`${++idx}. ${doc.title}`)
-            console.log("-".repeat(doc.title.length))
-            
+            let context = ""
             for (const term in res.matchData.metadata) {
                 const matches = res.matchData.metadata[term]
                 if (matches.body && matches.body.position.length > 0) {
                     const pos = matches.body.position[0]
-                    console.log(doc.body.substr(Math.max(0, pos[0] - 10), 100))
+                    context = doc.body.substr(Math.max(0, pos[0] - 10), 100)
                 }
             }
-            console.log("\n\n")
-        }
+            return {
+                title: doc.title,
+                content: context
+            }
+        })
+        
     }
 
     private async index() {
