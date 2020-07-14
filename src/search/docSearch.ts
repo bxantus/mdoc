@@ -50,14 +50,19 @@ export class DocSearch {
         console.log(`Results (${results.length})`)
         return results.map(res => {
             const doc = this.docsById.get(parseInt(res.ref)) as DocumentData
-            let context = ""
+            let contextStart:number|undefined // earliest start position of context text from result
+            
             for (const term in res.matchData.metadata) {
                 const matches = res.matchData.metadata[term]
                 if (matches.body && matches.body.position.length > 0) {
-                    const pos = matches.body.position[0]
-                    context = doc.body.substr(Math.max(0, pos[0] - 10), 100)
+                    const startPos:number = matches.body.position[0][0]
+                    if (contextStart == undefined || startPos < contextStart)
+                        contextStart = startPos
                 }
             }
+            if (contextStart == undefined) // will show the first n lines
+                contextStart = 0
+            const context = this.getContext(doc.body, contextStart)
             return {
                 title: doc.title,
                 url: doc.url,
@@ -65,6 +70,31 @@ export class DocSearch {
             }
         })
         
+    }
+
+    private getContext(body:string, startPos:number, numLines = 4, maxLineSize = 80) {
+        let contextStart = body.lastIndexOf("\n", startPos) + 1 // will be 0 if not found (start of doc, as lastIndexOf returns -1). this is just right
+        let prefix = ""
+        const ellipse = "\u2026" // ...
+        if (startPos - contextStart > maxLineSize) {
+            contextStart = startPos - maxLineSize
+            prefix = ellipse 
+        }
+        let contextEnd:number = contextStart - 1
+        for (let line = 0; line < numLines; ++line) {
+            const nextNewLine = body.indexOf("\n", contextEnd + 1)
+            if (nextNewLine == -1) {
+                contextEnd = body.length // will reach to the end of the doc
+                break;
+            }
+            contextEnd = nextNewLine
+        }
+        let postfix = ""
+        if (contextEnd - contextStart > numLines * maxLineSize) {
+            contextEnd = contextStart + numLines * maxLineSize;
+            postfix = ellipse
+        }
+        return prefix + body.substring(contextStart, contextEnd) + postfix
     }
 
     private async index() {

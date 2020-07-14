@@ -248,7 +248,7 @@ class DocViewer implements vscode.Disposable {
                         <input id="searchinput" data-searchId="${searchId}" type="text" value="${proj.searchState.query}"  />
                     </div>
                     
-                    <div id="results" >
+                    <div id="results" class="search" >
                     </div>
                 </div>
         

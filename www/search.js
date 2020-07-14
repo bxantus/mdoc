@@ -25,7 +25,7 @@ window.addEventListener('message', event => {
 
         for (const res of message.results) {
             resultsDiv.insertAdjacentHTML("beforeend", `<a href="${res.url}"><h2>${res.title}</h2></a>`)
-            resultsDiv.insertAdjacentHTML("beforeend", res.content)
+            resultsDiv.insertAdjacentHTML("beforeend", `<p class="detail" >${res.content}</p>`)
         }
     } if (message.command == "searchProgress") {
         // update progress display (ex. index)
