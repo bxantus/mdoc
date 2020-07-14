@@ -44,3 +44,39 @@ div.uppercase {
     text-transform: uppercase;
     font-weight: bold;
 }
+
+/*search styles*/
+span.project-title {
+    color: var(--vscode-editorLineNumber-foreground);
+    font-size: 0.8em;
+    margin-left: 0.5em;
+}
+
+div#searchbox {
+    border-style: solid;
+    border-width: 1px;
+    border-color: transparent;
+    padding: 4px;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    outline-color: var(--vscode-checkbox-border);    
+    outline-width: 1px;
+    outline-style: solid;
+    font-size: 13px;
+    height: 20px;
+}
+
+div#searchbox:focus-within {
+    outline-color: var(--vscode-inputValidation-infoBorder); 
+}
+
+input, input:focus {
+    background-color: inherit;
+    color: inherit;
+    width: 100%;
+    height: 20px;
+    border: none;
+    outline: none;
+    margin: 0;
+    padding: 0;
+}

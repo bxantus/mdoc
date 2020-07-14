@@ -241,7 +241,9 @@ class DocViewer implements vscode.Disposable {
             <body>
                 <div id="__markdown-content">
                     <h1>Search<span class="project-title">${proj.source.title}</span></h1>
-                    <input id="searchbox" type="text" value="${proj.searchState.query}" size="20" />
+                    <div id="searchbox">
+                        <input id="searchinput" type="text" value="${proj.searchState.query}"  />
+                    </div>
                     
                     <div id="results" >
                     </div>

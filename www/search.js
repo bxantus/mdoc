@@ -1,12 +1,15 @@
 // `vscode` is already requested in viewer.js
 window.addEventListener('load', () => {
-    document.getElementById("searchbox").oninput = (inputEvent) => {
+    const input = document.getElementById("searchinput")
+    input.oninput = (inputEvent) => {
         const query = inputEvent.target.value
         vscode.postMessage({
             command: "search",
             query
         })
     }
+    input.focus()
+
 })
 
 window.addEventListener('message', event => {

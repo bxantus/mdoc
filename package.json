@@ -50,7 +50,7 @@
 			},
 			{
 				"command": "xdoc.project.search",
-				"title": "Update project",
+				"title": "Search in project",
 				"icon": "$(search)"
 			}
 		],
