@@ -1,3 +1,5 @@
+let searchId = 0
+
 // `vscode` is already requested in viewer.js
 window.addEventListener('load', () => {
     const input = document.getElementById("searchinput")
@@ -5,11 +7,14 @@ window.addEventListener('load', () => {
         const query = inputEvent.target.value
         vscode.postMessage({
             command: "search",
-            query
+            query,
+            searchId
         })
     }
     input.focus()
 
+    searchId = parseInt(input.getAttribute("data-searchId"))
+    console.log("searchId: ", searchId)
 })
 
 window.addEventListener('message', event => {

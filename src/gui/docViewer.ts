@@ -22,6 +22,9 @@ class DocViewer implements vscode.Disposable {
     projects:Project[] = []
     projectProvider:ProjectTreeProvider|undefined
     projectTree:vscode.TreeView<Node>|undefined
+    // linking searches to projects and vice versa
+    private searchIdByProject = new Map<Project, number>()
+    private projectBySearchId = new Map<number, Project>()
     #extensionPath = ""
     
     constructor() {
@@ -60,7 +63,6 @@ class DocViewer implements vscode.Disposable {
         
         context.subscriptions.push(vscode.commands.registerCommand("xdoc.project.search", async (node:Node)=> {
             if (node.project) {
-                // todo: check if search view is already open, also should remember current results
                 this.loadSearchInViewer(node.project)
             }
         }))
@@ -229,7 +231,8 @@ class DocViewer implements vscode.Disposable {
         const viewerJs = asWebviewUri(path.join(this.#extensionPath, "www", "viewer.js"))
         const searchJs = asWebviewUri(path.join(this.#extensionPath, "www", "search.js"))
         
-        
+        const searchId = this.getSearchId(proj)
+
         const htmlContent = 
             `
             <head>
@@ -242,7 +245,7 @@ class DocViewer implements vscode.Disposable {
                 <div id="__markdown-content">
                     <h1>Search<span class="project-title">${proj.source.title}</span></h1>
                     <div id="searchbox">
-                        <input id="searchinput" type="text" value="${proj.searchState.query}"  />
+                        <input id="searchinput" data-searchId="${searchId}" type="text" value="${proj.searchState.query}"  />
                     </div>
                     
                     <div id="results" >
@@ -300,17 +303,18 @@ class DocViewer implements vscode.Disposable {
                 
                 this.openDocument(this.#current.source, url, message.title)
             } else if (message.command == "search") {
-                // todo: should link search with a given project
-                const project = this.projects[0]
-                project.searchState.query = message.query
-                this.scheduleSearch(project, message.query)
+                const project = this.projectBySearchId.get(message.searchId)
+                if (project) {
+                    project.searchState.query = message.query
+                    this.scheduleSearch(project, message.query)
+                }
             }
         })
         return panel
     }
 
     #searchTimeout:NodeJS.Timeout|undefined
-    scheduleSearch(project:Project, query:string) {
+    private scheduleSearch(project:Project, query:string) {
         if (this.#searchTimeout)
             clearTimeout(this.#searchTimeout)
         this.#searchTimeout = setTimeout(async ()=> {
@@ -322,6 +326,16 @@ class DocViewer implements vscode.Disposable {
                 results
             })
         }, 300)    
+    }
+
+    private getSearchId(proj:Project):number {
+        let id = this.searchIdByProject.get(proj)
+        if (id == undefined) {
+            id = this.searchIdByProject.size + 1;
+            this.searchIdByProject.set(proj, id)
+            this.projectBySearchId.set(id, proj)
+        }
+        return id
     }
 }
 
