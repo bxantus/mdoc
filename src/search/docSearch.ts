@@ -51,10 +51,11 @@ export class DocSearch {
         return results.map(res => {
             const doc = this.docsById.get(parseInt(res.ref)) as DocumentData
             let contextStart:number|undefined // earliest start position of context text from result
-            
+            const allMatches = new AllMatches
             for (const term in res.matchData.metadata) {
                 const matches = res.matchData.metadata[term]
                 if (matches.body && matches.body.position.length > 0) {
+                    allMatches.add(matches.body.position)
                     const startPos:number = matches.body.position[0][0]
                     if (contextStart == undefined || startPos < contextStart)
                         contextStart = startPos
@@ -62,7 +63,7 @@ export class DocSearch {
             }
             if (contextStart == undefined) // will show the first n lines
                 contextStart = 0
-            const context = this.getContext(doc.body, contextStart)
+            const context = getContext(doc.body, contextStart, allMatches)
             return {
                 title: doc.title,
                 url: doc.url,
@@ -70,31 +71,6 @@ export class DocSearch {
             }
         })
         
-    }
-
-    private getContext(body:string, startPos:number, numLines = 4, maxLineSize = 80) {
-        let contextStart = body.lastIndexOf("\n", startPos) + 1 // will be 0 if not found (start of doc, as lastIndexOf returns -1). this is just right
-        let prefix = ""
-        const ellipse = "\u2026" // ...
-        if (startPos - contextStart > maxLineSize) {
-            contextStart = startPos - maxLineSize
-            prefix = ellipse 
-        }
-        let contextEnd:number = contextStart - 1
-        for (let line = 0; line < numLines; ++line) {
-            const nextNewLine = body.indexOf("\n", contextEnd + 1)
-            if (nextNewLine == -1) {
-                contextEnd = body.length // will reach to the end of the doc
-                break;
-            }
-            contextEnd = nextNewLine
-        }
-        let postfix = ""
-        if (contextEnd - contextStart > numLines * maxLineSize) {
-            contextEnd = contextStart + numLines * maxLineSize;
-            postfix = ellipse
-        }
-        return prefix + body.substring(contextStart, contextEnd) + postfix
     }
 
     private async index() {
@@ -168,4 +144,91 @@ function* documents(docs:ProjectNode[]):Generator<{uri?:string, label:string}> {
         yield { uri: child.docUri, label: child.label }
         yield* documents(child.children)
     }
+}
+
+type MatchArray = [number/*start*/, number/*len*/][]
+interface Match {
+    start: number,
+    len: number
+}
+// matches for a given search term
+interface Matches {
+    matches:MatchArray
+    idx: number // idx of traversing positions
+}
+
+// a set of matches, and utilities to traverse them
+class AllMatches {
+    data:Matches[] = []
+    
+    add(matches:MatchArray) {
+        this.data.push({matches, idx: 0})
+    }
+
+    next():IteratorResult<Match> {
+        let best: Match|undefined
+        let bestMatches:Matches|undefined
+        for (const m of this.data) {
+            if (m.idx < m.matches.length) {
+                const match = m.matches[m.idx]
+                if (!best || match[0] < best.start) {
+                    best = { start: match[0], len: match[1]}
+                    bestMatches = m
+                }
+            }
+        }
+        if (best && bestMatches) {
+            bestMatches.idx++
+            return {value: best, done:false}
+        } else 
+            return {value:undefined, done:true}
+    }
+    [Symbol.iterator]() {
+        return this
+    }
+}
+
+function getContext(body:string, startPos:number, matches:AllMatches, numLines = 4, maxLineSize = 80) {
+    let contextStart = body.lastIndexOf("\n", startPos) + 1 // will be 0 if not found (start of doc, as lastIndexOf returns -1). this is just right
+    let prefix = ""
+    const ellipse = "\u2026" // ...
+    if (startPos - contextStart > maxLineSize) {
+        contextStart = startPos - maxLineSize
+        prefix = ellipse 
+    }
+    let contextEnd:number = contextStart - 1
+    for (let line = 0; line < numLines; ++line) {
+        const nextNewLine = body.indexOf("\n", contextEnd + 1)
+        if (nextNewLine == -1) {
+            contextEnd = body.length // will reach to the end of the doc
+            break;
+        }
+        contextEnd = nextNewLine
+    }
+    let postfix = ""
+    if (contextEnd - contextStart > numLines * maxLineSize) {
+        contextEnd = contextStart + numLines * maxLineSize;
+        postfix = ellipse
+    }
+    return prefix 
+           + highlightMatches({body, startOffset: contextStart, endOffset: contextEnd}, '<span class="search-match">', "</span>", matches) 
+           + postfix
+}
+
+/// all matches in context will be surronded with hpre and hsuff
+/// start and endOffset denotes the larger body of text, text is part of
+function highlightMatches(context:{ body: string, startOffset:number, endOffset:number }, hpre:string, hsuff:string, matches:AllMatches) {
+    const parts:string[] = []
+    let curr = context.startOffset // the current position in input string
+    for (const m of matches) {
+        if (m.start < context.startOffset)
+            continue
+        if (m.start >= context.endOffset)
+            break;
+        parts.push(context.body.substring(curr, m.start), hpre, context.body.substr(m.start, m.len), hsuff)
+        curr = m.start + m.len
+    }
+    if (curr < context.endOffset)
+        parts.push(context.body.substring(curr, context.endOffset))
+    return parts.join("")
 }

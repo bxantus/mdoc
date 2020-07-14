@@ -84,3 +84,7 @@ input, input:focus {
 #results.search > p.detail {
     white-space: pre-line;
 }
+
+#results.search span.search-match {
+    background-color: var(--vscode-editor-findMatchHighlightBackground)
+}
