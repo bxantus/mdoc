@@ -4,13 +4,15 @@ import { SourceAdapter } from "./sourceAdapter";
 
 export class Document {
     url:string // document's fully resolved url, all internal links should be resolved relative to this one
+    projectUrl:string // url relative to the source project
     markdownContent:Buffer
     source?:SourceAdapter
      // some kind of functionality would be beneficial to query the first few paragraphs of a heading
 
-    constructor(data:{markdownContent:Buffer, url:string, source?:SourceAdapter}) {
+    constructor(data:{markdownContent:Buffer, url:string, source?:SourceAdapter, projectUrl:string}) {
         this.markdownContent = data.markdownContent
         this.url = data.url
+        this.projectUrl = data.projectUrl
         this.source = data.source
     }
 

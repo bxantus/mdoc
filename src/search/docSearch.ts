@@ -3,16 +3,11 @@ import lunr from "lunr"
 import { Document } from "../source/document";
 import { MarkdownParser } from "../parser/mdParser";
 
-export interface Result {
-    docUri:string
-    title:string
-    context:string  // display this context with the search results
-}
-
 interface DocumentData {
     id:number
     title:string
     body:string // full document body, without markup
+    url:string
 }
 
 export class DocSearch {
@@ -34,6 +29,8 @@ export class DocSearch {
     #indexProcess:Promise<void>|undefined
 
     async search(query:string) {
+        if (query == "") // no results for empty query
+            return []
         console.log(`Searching for: '${query}'`)
         if (!this.#indexProcess)
             this.#indexProcess = this.index()
@@ -57,6 +54,7 @@ export class DocSearch {
             }
             return {
                 title: doc.title,
+                url: doc.url,
                 content: context
             }
         })
@@ -122,7 +120,7 @@ export class DocSearch {
             id: this.docsById.size,
             title,
             body: doc.markdownContent.toString(),
-
+            url: doc.projectUrl
         }
         this.docsById.set(data.id, data)
         builder.add(data)

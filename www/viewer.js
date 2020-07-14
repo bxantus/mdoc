@@ -7,7 +7,7 @@ document.addEventListener("click", e=>{
         return;
     let t = e.target;
     for (; t; ) {
-        const href = t.getAttribute("href");
+        const href = t.tagName == "A" ? t.getAttribute("href") : undefined;
         if (t.tagName && "A" === t.tagName && href) {
             if (href.startsWith("#"))
                 return;

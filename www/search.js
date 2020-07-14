@@ -19,9 +19,7 @@ window.addEventListener('message', event => {
         resultsDiv.textContent = "" // clear contents
 
         for (const res of message.results) {
-            const title = document.createElement("h2")
-            title.textContent = res.title
-            resultsDiv.append(title)
+            resultsDiv.insertAdjacentHTML("beforeend", `<a href="${res.url}"><h2>${res.title}</h2></a>`)
             resultsDiv.insertAdjacentHTML("beforeend", res.content)
         }
     } if (message.command == "searchProgress") {

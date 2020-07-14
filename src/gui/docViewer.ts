@@ -254,7 +254,7 @@ class DocViewer implements vscode.Disposable {
         
         this.viewerPanel.webview.html = htmlContent
         this.viewerPanel.title = "Search"
-        
+        this.#current = { title: "Search", source:proj.source, uri: "" }
         
         this.viewerPanel.webview.postMessage({command:"scrollToTop"})
         this.viewerPanel.reveal()
