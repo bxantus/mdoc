@@ -10,6 +10,12 @@ interface DocumentData {
     url:string
 }
 
+export interface SearchResult {
+    title: string
+    url: string
+    content: string
+}
+
 export class DocSearch {
     state = {
         indexed : false,
@@ -28,7 +34,7 @@ export class DocSearch {
 
     #indexProcess:Promise<void>|undefined
 
-    async search(query:string) {
+    async search(query:string):Promise<SearchResult[]> {
         if (query == "") // no results for empty query
             return []
         console.log(`Searching for: '${query}'`)

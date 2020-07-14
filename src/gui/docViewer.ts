@@ -7,13 +7,13 @@ import { Document } from '../source/document';
 import * as path from 'path';
 import slugify from '../util/slugify'
 import dispose from '../util/dispose';
-import { DocSearch } from '../search/docSearch';
+import { DocSearch, SearchResult } from '../search/docSearch';
 
 interface Project {
     source: SourceAdapter
     projectTree:  ProjectTree
     docSearch:DocSearch
-    searchState: { query:string }
+    searchState: { query:string, results:SearchResult[] }
     subs: vscode.Disposable[]
     loading?:boolean
 }
@@ -92,7 +92,7 @@ class DocViewer implements vscode.Disposable {
             projectTree: await projSource.getProjectTree(),
             subs: [],
             docSearch: new DocSearch(projSource),
-            searchState: { query: "" }
+            searchState: { query: "", results: [] }
         }
         this.projects.push(proj)
         this.projectProvider?.projectAdded(proj)
@@ -256,8 +256,14 @@ class DocViewer implements vscode.Disposable {
         this.viewerPanel.title = "Search"
         this.#current = { title: "Search", source:proj.source, uri: "" }
         
-        this.viewerPanel.webview.postMessage({command:"scrollToTop"})
         this.viewerPanel.reveal()
+        this.viewerPanel.webview.postMessage({command:"scrollToTop"})
+        if (proj.searchState.results.length > 0) {
+            this.viewerPanel.webview.postMessage({
+                command: "searchResults",
+                results: proj.searchState.results
+            })
+        }
     }
 
     #viewerPanel:vscode.WebviewPanel | undefined
@@ -296,6 +302,7 @@ class DocViewer implements vscode.Disposable {
             } else if (message.command == "search") {
                 // todo: should link search with a given project
                 const project = this.projects[0]
+                project.searchState.query = message.query
                 this.scheduleSearch(project, message.query)
             }
         })
@@ -309,6 +316,7 @@ class DocViewer implements vscode.Disposable {
         this.#searchTimeout = setTimeout(async ()=> {
             this.#searchTimeout = undefined
             const results = await project.docSearch.search(query)
+            project.searchState.results = results
             this.viewerPanel.webview.postMessage({
                 command: "searchResults",
                 results
