@@ -85,14 +85,19 @@ export class DocSearch {
                                                       // see: https://lunrjs.com/guides/core_concepts.html#search-results
         const tree = await this.source.getProjectTree()
         const visitedDocs = new Set<string>()
+        const visitDoc = async (uri:string, label:string, options={parseTitle:true}) => {
+            if (!visitedDocs.has(uri)) {
+                visitedDocs.add(uri)
+                const doc = await getDocument(this.source, uri)
+                if (doc) this.indexDocument(doc, label, indexBuilder, options) 
+            }
+        }
+        await visitDoc("README.md", this.source.title, {parseTitle:false})
+
         // walk the documents, and index all of them, emit index progress
         for (const docData of documents(tree.children)) {
             if (docData.uri) { 
-                if (!visitedDocs.has(docData.uri)) {
-                    visitedDocs.add(docData.uri)
-                    const doc = await getDocument(this.source, docData.uri)
-                    if (doc) this.indexDocument(doc, docData.label, indexBuilder) 
-                }
+                await visitDoc(docData.uri, docData.label)
             }
         }
         this.lunrIndex = indexBuilder.build()
@@ -105,27 +110,29 @@ export class DocSearch {
         // the whole index has to be rebuilt! (as lunr indices as immutable)
     }
 
-    private indexDocument(doc:Document, label:string, builder:lunr.Builder) {
-        // get title from document
-        const parser = new MarkdownParser(doc.markdownContent)
+    private indexDocument(doc:Document, label:string, builder:lunr.Builder, options = {parseTitle : true}) {
         let title:string|undefined
-        let readTitle:boolean = false
-        parser.parse({
-            enterHeading(level) {
-                if (level == 1 && title == undefined)
-                    readTitle = true
-            },
-            leaveHeading(level) {
-                if (level == 1) {
-                    readTitle = false
-                    // todo: could finish parsing here
-                }
-            },
-            text(text) {
-                if (readTitle)
-                    title = title == undefined ? text : title + text
-            },
-        })
+        // get title from document, if needed
+        if (options.parseTitle) {
+            const parser = new MarkdownParser(doc.markdownContent)
+            let readTitle:boolean = false
+            parser.parse({
+                enterHeading(level) {
+                    if (level == 1 && title == undefined)
+                        readTitle = true
+                },
+                leaveHeading(level) {
+                    if (level == 1) {
+                        readTitle = false
+                        // todo: could finish parsing here
+                    }
+                },
+                text(text) {
+                    if (readTitle)
+                        title = title == undefined ? text : title + text
+                },
+            })
+        }
         if (!title)
             title = label
         const data:DocumentData = {
