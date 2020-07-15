@@ -40,16 +40,16 @@ class DocViewer implements vscode.Disposable {
     init(context:vscode.ExtensionContext) {
         this.#extensionPath = context.extensionPath
         this.projectProvider = new ProjectTreeProvider(this)
-        this.projectTree = vscode.window.createTreeView<Node>("xdocProjects", {treeDataProvider: this.projectProvider})
+        this.projectTree = vscode.window.createTreeView<Node>("mdocProjects", {treeDataProvider: this.projectProvider})
 
-        context.subscriptions.push(vscode.commands.registerCommand("xdoc.openFromSidebar", async (node: Node) => {
+        context.subscriptions.push(vscode.commands.registerCommand("mdoc.openFromSidebar", async (node: Node) => {
             const docUri = node.docUri
             const source = node.source
             if (docUri && source) {
                 this.openDocument(source, docUri, node.label)
             }
         }))
-        context.subscriptions.push(vscode.commands.registerCommand("xdoc.project.update", async (node:Node)=> {
+        context.subscriptions.push(vscode.commands.registerCommand("mdoc.project.update", async (node:Node)=> {
             if (node.project && !node.project.loading) {
                 node.project.loading = true
                 this.projectProvider?.changed(node)
@@ -62,7 +62,7 @@ class DocViewer implements vscode.Disposable {
             }
         }))
         
-        context.subscriptions.push(vscode.commands.registerCommand("xdoc.project.search", async (node:Node)=> {
+        context.subscriptions.push(vscode.commands.registerCommand("mdoc.project.search", async (node:Node)=> {
             if (node.project) {
                 this.loadSearchInViewer(node.project)
             }
@@ -278,7 +278,7 @@ class DocViewer implements vscode.Disposable {
     private createViewerPanel() {
         const panel = vscode.window.createWebviewPanel(
             'mDoc',
-            'XDoc viewer',
+            'mdoc viewer',
             vscode.ViewColumn.Active,
             {
                 enableScripts: true,
@@ -418,7 +418,7 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
             
         }
         item.command = {
-            command: "xdoc.openFromSidebar",
+            command: "mdoc.openFromSidebar",
             title: "Open document",
             arguments: [node]
         }

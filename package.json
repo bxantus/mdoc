@@ -1,12 +1,11 @@
 {
-	"name": "xdoc",
-	"displayName": "xdoc",
-	"description": "markdown documentation viewer",
+	"name": "mdoc",
+	"displayName": "mdoc - Markdown Documentation Viewer",
+	"description": "markdown documentation viewer for Visual Studio Code",
 	"version": "1.0.0-alpha.5",
 	"publisher": "bxantus",
 	"author": {
-		"name": "Botond Xantus",
-		"email": "drx.trash@gmail.com"
+		"name": "Botond Xantus"
 	},
 	"icon": "media/icon.png",
 	"engines": {
@@ -23,33 +22,33 @@
 		"viewsContainers": {
 			"activitybar": [
 				{
-					"id": "xdoc",
+					"id": "mdoc",
 					"title": "Documentations",
 					"icon": "media/library_books.svg"
 				}
 			]
 		},
 		"views": {
-			"xdoc": [
+			"mdoc": [
 				{
-					"id": "xdocProjects",
+					"id": "mdocProjects",
 					"name": "Projects"
 				}
 			]
 		},
 		"commands": [
 			{
-				"command": "xdoc.add.fromFilesystem",
+				"command": "mdoc.add.fromFilesystem",
 				"title": "Add documentation project from the filesystem",
-				"group": "xdoc"
+				"group": "mdoc"
 			},
 			{
-				"command": "xdoc.project.update",
+				"command": "mdoc.project.update",
 				"title": "Update project",
 				"icon": "$(sync)"
 			},
 			{
-				"command": "xdoc.project.search",
+				"command": "mdoc.project.search",
 				"title": "Search in project",
 				"icon": "$(search)"
 			}
@@ -57,21 +56,21 @@
 		"menus": {
 			"view/item/context": [
 				{
-					"command": "xdoc.project.update",
-					"when": "view == xdocProjects && viewItem == project",
+					"command": "mdoc.project.update",
+					"when": "view == mdocProjects && viewItem == project",
 					"group": "inline"
 				},
 				{
-					"command": "xdoc.project.search",
-					"when": "view == xdocProjects && viewItem == project",
+					"command": "mdoc.project.search",
+					"when": "view == mdocProjects && viewItem == project",
 					"group": "inline"
 				}
 			]
 		},
 		"viewsWelcome": [
 			{
-				"view": "xdocProjects",
-				"contents": "No documentation projects added.\n[Add project from filesystem](command:xdoc.add.fromFilesystem)"
+				"view": "mdocProjects",
+				"contents": "No documentation projects added.\n[Add project from filesystem](command:mdoc.add.fromFilesystem)"
 			}
 		]
 	},

@@ -27,7 +27,7 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() {}
 
 function registerCommands(context: vscode.ExtensionContext) {
-	context.subscriptions.push(vscode.commands.registerCommand("xdoc.add.fromFilesystem", async ()=> {
+	context.subscriptions.push(vscode.commands.registerCommand("mdoc.add.fromFilesystem", async ()=> {
 		const result = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, openLabel: "Select project folder" })
 		if (result && result.length == 1) {
 			const projectUri = result[0]

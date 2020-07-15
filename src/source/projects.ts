@@ -15,7 +15,7 @@ class DocProjects {
     projects:ProjectSettings = { projects: [] }
     
     async init() {
-        this.projectsDir = `${os.homedir()}/.xdoc`
+        this.projectsDir = `${os.homedir()}/.mdoc`
         // create dir if not exists
         await fs.mkdir(this.projectsDir, {recursive: true})
         await this.load()
@@ -49,7 +49,7 @@ class DocProjects {
         try {
             await fs.writeFile(`${this.projectsDir}/projects.json`, JSON.stringify(this.projects, undefined, 4))
         } catch (ex) {
-            const choice = await vscode.window.showErrorMessage(`xdoc couldn't save 'projects.json'`, "Retry")
+            const choice = await vscode.window.showErrorMessage(`mdoc couldn't save 'projects.json'`, "Retry")
             if (choice == "Retry") {
                 this.scheduleSave()
             }
