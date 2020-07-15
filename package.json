@@ -4,6 +4,10 @@
 	"description": "markdown documentation viewer for Visual Studio Code",
 	"version": "1.0.0-alpha.5",
 	"publisher": "bxantus",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/bxantus/mdoc.git"
+	},
 	"author": {
 		"name": "Botond Xantus"
 	},
