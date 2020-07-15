@@ -10,11 +10,15 @@ import dispose from '../util/dispose';
 import { DocSearch, SearchResult } from '../search/docSearch';
 import { getSearchHelpInHtml } from "./search"
 
+interface SearchState {
+    query:string
+    results:SearchResult[]
+}
 interface Project {
     source: SourceAdapter
     projectTree:  ProjectTree
     docSearch:DocSearch
-    searchState: { query:string, results:SearchResult[] }
+    searchState: SearchState
     subs: vscode.Disposable[]
     loading?:boolean
 }
@@ -49,6 +53,13 @@ class DocViewer implements vscode.Disposable {
                 this.openDocument(source, docUri, node.label)
             }
         }))
+        context.subscriptions.push(vscode.commands.registerCommand("mdoc.searchFromSidebar", async (node: Node) => {
+            if (node.parent && node.parent.project) {
+                this.loadSearchInViewer(node.parent.project)
+            }
+        }))
+
+        
         context.subscriptions.push(vscode.commands.registerCommand("mdoc.project.update", async (node:Node)=> {
             if (node.project && !node.project.loading) {
                 node.project.loading = true
@@ -65,6 +76,17 @@ class DocViewer implements vscode.Disposable {
         context.subscriptions.push(vscode.commands.registerCommand("mdoc.project.search", async (node:Node)=> {
             if (node.project) {
                 this.loadSearchInViewer(node.project)
+            }
+        }))
+
+        context.subscriptions.push(vscode.commands.registerCommand("mdoc.project.closeSearch", async (node:Node)=> {
+            if (node.parent && node.parent.project) {
+                const proj = node.parent.project
+                proj.searchState = { query: "", results: []}
+                if (this.viewerPanel.visible && this.#current && this.#current.title == "Search") {
+                    this.viewerPanel.dispose()
+                }
+                this.projectProvider?.removeSearchNode(proj)
             }
         }))
     }
@@ -330,6 +352,7 @@ class DocViewer implements vscode.Disposable {
                 command: "searchResults",
                 results
             })
+            this.projectProvider?.updateSearchForProject(project)
         }, 300)    
     }
 
@@ -351,6 +374,7 @@ class Node { // a node in the project tree sidebar
     label:string
     docUri?:string
     project?:Project
+    searchState?:SearchState // special search node
 
     children: Node[]
 
@@ -414,13 +438,26 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
             if (node.project.loading) {
                 item.iconPath = new vscode.ThemeIcon("tree-item-loading")
                 item.description = "loading..."
+            }   
+        } else if (node.searchState) {
+            item.contextValue = "search"
+            item.iconPath = new vscode.ThemeIcon("search")
+            if (node.searchState.query.length > 0) {
+                item.label += `: '${node.searchState.query}'`
+                item.description = node.searchState.results.length == 1 ? "1 result" : `${node.searchState.results.length} results`
             }
-            
+            item.command = {
+                command: "mdoc.searchFromSidebar",
+                title: "Open search",
+                arguments: [node]
+            }
         }
-        item.command = {
-            command: "mdoc.openFromSidebar",
-            title: "Open document",
-            arguments: [node]
+        if (!item.command) {
+            item.command = {
+                command: "mdoc.openFromSidebar",
+                title: "Open document",
+                arguments: [node]
+            }
         }
         return item
     }
@@ -459,6 +496,29 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
                                    project:proj, children: proj.projectTree.children})
         this.updateUriMappings(proj.source, this.nodes[idx])
         this.changed(this.nodes[idx])   
+    }
+
+    updateSearchForProject(proj:Project, ) {
+        const searchState  = proj.searchState
+        const projNode = this.nodes.find(n => n.source == proj.source) as Node
+        if (projNode.children.length < 1 || !projNode.children[0].searchState) { // has no active search node
+            const searchNode = new Node({label: "Search", parent:projNode, children: []})
+            searchNode.searchState = searchState
+            projNode.children.unshift(searchNode)
+            this.changed(projNode)
+        } else {
+            const searchNode = projNode.children[0]
+            searchNode.searchState = searchState
+            this.changed(searchNode)
+        }
+    }
+
+    removeSearchNode(proj:Project) {
+        const projNode = this.nodes.find(n => n.source == proj.source) as Node
+        if (projNode.children.length >= 1 || projNode.children[0].searchState) { // has active search node
+            projNode.children.splice(0, 1) // remove
+            this.changed(projNode)
+        }
     }
 
     private updateUriMappings(source:SourceAdapter, rootNode:Node) {

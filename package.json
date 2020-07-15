@@ -55,6 +55,11 @@
 				"command": "mdoc.project.search",
 				"title": "Search in project",
 				"icon": "$(search)"
+			},
+			{
+				"command": "mdoc.project.closeSearch",
+				"title": "Close search",
+				"icon": "$(close)"
 			}
 		],
 		"menus": {
@@ -67,6 +72,11 @@
 				{
 					"command": "mdoc.project.search",
 					"when": "view == mdocProjects && viewItem == project",
+					"group": "inline"
+				},
+				{
+					"command": "mdoc.project.closeSearch",
+					"when": "view == mdocProjects && viewItem == search",
 					"group": "inline"
 				}
 			]
