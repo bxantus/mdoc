@@ -8,6 +8,7 @@ import * as path from 'path';
 import slugify from '../util/slugify'
 import dispose from '../util/dispose';
 import { DocSearch, SearchResult } from '../search/docSearch';
+import { getSearchHelpInHtml } from "./search"
 
 interface Project {
     source: SourceAdapter
@@ -223,7 +224,7 @@ class DocViewer implements vscode.Disposable {
         return html
     }
 
-    private loadSearchInViewer(proj:Project) {
+    private async loadSearchInViewer(proj:Project) {
         const asWebviewUri = (path:string) => this.viewerPanel.webview.asWebviewUri(vscode.Uri.file(path))
         
         const markdownCss = asWebviewUri(path.join(this.#extensionPath, "www", "markdown.css"))
@@ -232,6 +233,7 @@ class DocViewer implements vscode.Disposable {
         const searchJs = asWebviewUri(path.join(this.#extensionPath, "www", "search.js"))
         
         const searchId = this.getSearchId(proj)
+        const searchHelp = await getSearchHelpInHtml(this.#extensionPath)
 
         const htmlContent = 
             `
@@ -250,6 +252,9 @@ class DocViewer implements vscode.Disposable {
                     
                     <div id="results" class="search" >
                     </div>
+                </div>
+                <div id="__side-search">
+                    ${searchHelp}
                 </div>
         
             </body>
