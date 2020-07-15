@@ -2,7 +2,7 @@
 	"name": "mdoc",
 	"displayName": "mdoc - Markdown Documentation Viewer",
 	"description": "markdown documentation viewer for Visual Studio Code",
-	"version": "1.0.0-beta.1",
+	"version": "1.0.0",
 	"publisher": "bxantus",
 	"repository": {
 		"type": "git",
