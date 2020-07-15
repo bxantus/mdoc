@@ -45,7 +45,11 @@ export interface UpdateResult {
 /// gets the document either form the adapter or from the web (in the case of http or https urls)
 export async function getDocument(source:SourceAdapter, docUri:string):Promise<Document|undefined> {
     if (docUri.startsWith("http://") || docUri.startsWith("https://")) { // should download it from the net
-        const buf = await fetch(docUri).then(res => res.buffer())
-        return new Document({markdownContent:buf, url:docUri, projectUrl:docUri, source:undefined /*marks this document comes from an external source*/})
+        try {
+            const buf = await fetch(docUri).then(res => res.buffer())
+            return new Document({markdownContent:buf, url:docUri, projectUrl:docUri, source:undefined /*marks this document comes from an external source*/})
+        } catch (fetcErr) { // probably document doesn't exist, or no access is granted to fetch
+            return undefined
+        }
     } else return source.getDocument(docUri)
 }
