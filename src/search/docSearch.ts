@@ -6,12 +6,14 @@ import { MarkdownParser } from "../parser/mdParser";
 interface DocumentData {
     id:number
     title:string
+    docPath:string // the document path through `idex.md` structure
     body:string // full document body, without markup
     url:string
 }
 
 export interface SearchResult {
     title: string
+    docPath: string
     url: string
     content: string
 }
@@ -67,6 +69,7 @@ export class DocSearch {
             return {
                 title: doc.title,
                 url: doc.url,
+                docPath: doc.docPath,
                 content: context
             }
         })
@@ -85,19 +88,19 @@ export class DocSearch {
                                                       // see: https://lunrjs.com/guides/core_concepts.html#search-results
         const tree = await this.source.getProjectTree()
         const visitedDocs = new Set<string>()
-        const visitDoc = async (uri:string, label:string, options={parseTitle:true}) => {
+        const visitDoc = async (uri:string, title:string, docPath:string) => {
             if (!visitedDocs.has(uri)) {
                 visitedDocs.add(uri)
                 const doc = await getDocument(this.source, uri)
-                if (doc) this.indexDocument(doc, label, indexBuilder, options) 
+                if (doc) this.indexDocument(doc, title, docPath, indexBuilder) 
             }
         }
-        await visitDoc("README.md", this.source.title, {parseTitle:false})
+        await visitDoc("README.md", this.source.title, "")
 
         // walk the documents, and index all of them, emit index progress
         for (const docData of documents(tree.children)) {
             if (docData.uri) { 
-                await visitDoc(docData.uri, docData.label)
+                await visitDoc(docData.uri, docData.label, docData.docPath)
             }
         }
         this.lunrIndex = indexBuilder.build()
@@ -110,34 +113,12 @@ export class DocSearch {
         // the whole index has to be rebuilt! (as lunr indices as immutable)
     }
 
-    private indexDocument(doc:Document, label:string, builder:lunr.Builder, options = {parseTitle : true}) {
-        let title:string|undefined
-        // get title from document, if needed
-        if (options.parseTitle) {
-            const parser = new MarkdownParser(doc.markdownContent)
-            let readTitle:boolean = false
-            parser.parse({
-                enterHeading(level) {
-                    if (level == 1 && title == undefined)
-                        readTitle = true
-                },
-                leaveHeading(level) {
-                    if (level == 1) {
-                        readTitle = false
-                        // todo: could finish parsing here
-                    }
-                },
-                text(text) {
-                    if (readTitle)
-                        title = title == undefined ? text : title + text
-                },
-            })
-        }
-        if (!title)
-            title = label
+    private indexDocument(doc:Document, title:string, docPath:string, builder:lunr.Builder) {
+        
         const data:DocumentData = {
             id: this.docsById.size,
             title,
+            docPath,
             body: doc.markdownContent.toString(),
             url: doc.projectUrl
         }
@@ -146,10 +127,11 @@ export class DocSearch {
     }
 }
 
-function* documents(docs:ProjectNode[]):Generator<{uri?:string, label:string}> {
+function* documents(docs:ProjectNode[], path=""):Generator<{uri?:string, label:string, docPath:string}> {
     for (const child of docs) {
-        yield { uri: child.docUri, label: child.label }
-        yield* documents(child.children)
+        const docPath = `${path}${child.label}`
+        yield { uri: child.docUri, label: child.label, docPath }
+        yield* documents(child.children, docPath + "/")
     }
 }
 

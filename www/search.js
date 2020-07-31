@@ -24,6 +24,7 @@ window.addEventListener('message', event => {
         resultsDiv.textContent = "" // clear contents
 
         for (const res of message.results) {
+            resultsDiv.insertAdjacentHTML("beforeend", `<p class="result-path">${res.docPath ? res.docPath : res.title}</p>`)
             resultsDiv.insertAdjacentHTML("beforeend", `<a href="${res.url}"><h2>${res.title}</h2></a>`)
             resultsDiv.insertAdjacentHTML("beforeend", `<p class="detail" >${res.content}</p>`)
         }
