@@ -37,8 +37,8 @@ export class GitSource implements SourceAdapter {
 
     async getDocument(uri:string):Promise<Document|undefined> {
         // it is expected that uri is a relative one, from the project's path
-        const fileName = `${this.path}/${uri}`
         try {
+            const fileName = `${this.path}/${decodeURIComponent(uri)}` 
             const buf = await fs.readFile(fileName)
             return new Document({ markdownContent: buf, url: `file:///${fileName}`, source: this, projectUrl:uri })
 
@@ -49,7 +49,7 @@ export class GitSource implements SourceAdapter {
     }
 
     watchDocument(uri:string, onChange:()=>void) {
-        const watch = fsWatch(`${this.path}/${uri}`, undefined, async (event) => {
+        const watch = fsWatch(`${this.path}/${decodeURIComponent(uri)}`, undefined, async (event) => { // todo: decodeURIComponenet could throw exceptions, fsWatch too, if name is invalid
             if (event == "change") 
                 onChange()
         })

@@ -95,15 +95,14 @@ class DocViewer implements vscode.Disposable {
     #current:{source:SourceAdapter, uri:string, title:string}|undefined // info about currently opened doc. maybe later this will be attached to the given webview panel (if multiple panels are added)
 
     private async openDocument(source:SourceAdapter, docUri:string, title:string) {
-        const docPath = decodeURIComponent(docUri) // todo: this could throw exceptions, also watchDocument too if not used with a valid filename
-        const document = await getDocument(source, docPath)
+        const document = await getDocument(source, docUri)
         if (document) {
             this.#current = { source, uri: docUri, title }
             this.loadDocumentInViewer(document, title, {scrollToTop: true}) 
             this.#documentWatch?.dispose() // dispose old watch
             if (document.source == source) { // document may have external source, like a https:// uri for someting external
-                this.#documentWatch = source.watchDocument(docPath, async ()=> {
-                    const newDoc = await source.getDocument(docPath)
+                this.#documentWatch = source.watchDocument(docUri, async ()=> {
+                    const newDoc = await source.getDocument(docUri)
                     if (newDoc)
                         this.loadDocumentInViewer(newDoc, title, {scrollToTop: false}) 
                 })
