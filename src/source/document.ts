@@ -31,6 +31,7 @@ export class Document {
                         this.text = text => headingText += text
                         this.codeInline = text => headingText += "`" + text + "`" // (re)surround inline code blocks with backticks
                                                                                   // todo: should wrap with double backticks, when text itself contains backticks (see markdown spec)
+                        this.link = text => headingText += text
                     }
                 },
                 leaveHeading(level, source) {
@@ -39,7 +40,7 @@ export class Document {
                                         level:level, title: headingText, 
                                         source: new Range(headingSourceStart, source?.end ?? new Position(headingSourceStart.line + 1, 0))
                                     })
-                        this.text = this.codeInline = undefined
+                        this.text = this.codeInline = this.link = undefined
                     }
                 },
             })
