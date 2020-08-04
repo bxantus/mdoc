@@ -9,6 +9,7 @@ import slugify from '../util/slugify'
 import dispose from '../util/dispose';
 import { DocSearch, SearchResult } from '../search/docSearch';
 import { getSearchHelpInHtml } from "./search"
+import { sanitizeCodeFence } from '../util/sanitizeHtml';
 
 interface SearchState {
     query:string
@@ -192,7 +193,7 @@ class DocViewer implements vscode.Disposable {
         const viewerJs = asWebviewUri(path.join(this.#extensionPath, "www", "viewer.js"))
         
         let slugs = new Map<string, number>()
-        md.use(markdownItAnchor, {level: 1, slugify: (s:string) => slugify(s, slugs)})
+        md.use(markdownItAnchor, {level: [1, 2, 3], slugify: (s:string) => slugify(s, slugs)})
         const markdownContent = md.render(document.markdownContent.toString())
 
         const htmlContent = 
@@ -235,7 +236,7 @@ class DocViewer implements vscode.Disposable {
             } else if (h.level < headingLevel) { // close lists
                 html += "</ul>\n</li>\n".repeat(headingLevel - h.level)
             }
-            html += `<li><a title="${h.title}" href="#${slugify(h.title, slugs)}">${h.title}</a></li>\n`
+            html += `<li><a title="${h.title.replace(/"/g, "&quot;")}" href="#${slugify(h.title, slugs)}">${sanitizeCodeFence(h.title)}</a></li>\n`
             headingLevel = h.level
         }
         // close remaining headings

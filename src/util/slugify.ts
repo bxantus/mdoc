@@ -1,5 +1,5 @@
 export default function slugify(s:string, uniqueSlugs:Map<string, number>) {
-    let slug = encodeURIComponent(s.trim().toLowerCase().replace(/\s+/g, '-'))
+    let slug = s.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '')
     let counter = uniqueSlugs.get(slug) // counter for uniqueness
     if (counter != undefined) { // not unique
         counter++ // get next number for uniqueness (first will be 2)

@@ -7,7 +7,6 @@ export class Document {
     projectUrl:string // url relative to the source project
     markdownContent:Buffer
     source?:SourceAdapter
-     // some kind of functionality would be beneficial to query the first few paragraphs of a heading
 
     constructor(data:{markdownContent:Buffer, url:string, source?:SourceAdapter, projectUrl:string}) {
         this.markdownContent = data.markdownContent
@@ -17,7 +16,7 @@ export class Document {
     }
 
     #headings:Heading[]|undefined 
-    getHeadings():Heading[] {
+    getHeadings(maxLevel = 3):Heading[] {
         if (this.#headings == undefined) {
             const headings:Heading[] = this.#headings = []
             const parser = new MarkdownParser(this.markdownContent)
@@ -26,18 +25,23 @@ export class Document {
         
             parser.parse({
                 enterHeading(level, source) {
-                    headingText = ""
-                    headingSourceStart = source?.start ?? new Position(0, 0)
+                    if (level <= maxLevel) {
+                        headingText = ""
+                        headingSourceStart = source?.start ?? new Position(0, 0)
+                        this.text = text => headingText += text
+                        this.codeInline = text => headingText += "`" + text + "`" // (re)surround inline code blocks with backticks
+                                                                                  // todo: should wrap with double backticks, when text itself contains backticks (see markdown spec)
+                    }
                 },
                 leaveHeading(level, source) {
-                    headings.push({
-                                    level:level, title: headingText, 
-                                    source: new Range(headingSourceStart, source?.end ?? new Position(headingSourceStart.line + 1, 0))
-                                })
+                    if (level <= maxLevel) {
+                        headings.push({
+                                        level:level, title: headingText, 
+                                        source: new Range(headingSourceStart, source?.end ?? new Position(headingSourceStart.line + 1, 0))
+                                    })
+                        this.text = this.codeInline = undefined
+                    }
                 },
-                text(text) {
-                    headingText += text
-                }
             })
         }
         return this.#headings

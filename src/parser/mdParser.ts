@@ -92,7 +92,12 @@ export class MarkdownParser {
                 else 
                     listener.text?.(token.content, source)
             },
-
+            code_inline(token:Token, source?:Range) { // text inside backticks
+                if (link.active)
+                    link.text += token.content
+                else
+                    listener.codeInline?.(token.content, source)
+            }
         }
         for (let token of tokens) {
             performAction(token)
@@ -120,5 +125,6 @@ export interface ParseListener {
 
     text?: (text:string, source?:Range) => void
     link?: (text:string, href:string, source?:Range) => void
+    codeInline?: (text:string, source?:Range) => void 
     code?:(text:string, source?:Range) => void
 }
