@@ -69,9 +69,11 @@ class DocViewer implements vscode.Disposable {
                 const updateRes = await node.project.source.update()
                 if (!updateRes.ok) {
                     vscode.window.showErrorMessage(`Couldn't update project. ${updateRes.errorMessage}`)
+                } else {
+                    this.projectProvider?.changed(node)
+                    node.project.docSearch.invalidateIndex()
                 }
                 node.project.loading = false
-                this.projectProvider?.changed(node)
             }
         }))
         
@@ -118,6 +120,9 @@ class DocViewer implements vscode.Disposable {
                     } else if (this.#current) {
                         this.#current.dirty = true // mark current content as dirty, when activated it will reload
                     }
+                    const proj = this.projects.find(p => p.source == source)
+                    if (proj) 
+                        proj.docSearch.invalidateIndex()
                 })
             }
         }
@@ -138,6 +143,7 @@ class DocViewer implements vscode.Disposable {
         proj.subs.push(proj.source.onProjectTreeChanged((newTree)=> {
             proj.projectTree = newTree
             this.projectProvider?.projectChanged(proj) 
+            proj.docSearch.invalidateIndex()
         }))
 
         // if vebview panel is active, we should dispose it and recreate, as a new localResource should be added

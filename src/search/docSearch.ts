@@ -108,9 +108,11 @@ export class DocSearch {
         //emit indexing complete
     }
 
-    private async updateIndex() {
-        // updating index should be done with reparsing just the changed documents (use timestamp maybe)
+    invalidateIndex() {
         // the whole index has to be rebuilt! (as lunr indices as immutable)
+        // this method marks the index as invalid, next search will update it
+        this.state.indexed = false
+        this.#indexProcess = undefined
     }
 
     private indexDocument(doc:Document, title:string, docPath:string, builder:lunr.Builder) {
