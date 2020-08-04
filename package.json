@@ -44,7 +44,13 @@
 			{
 				"command": "mdoc.add.fromFilesystem",
 				"title": "Add documentation project from the filesystem",
-				"group": "mdoc"
+				"category": "mdoc"
+			},
+			{
+				"command": "mdoc.add.fromGit",
+				"title": "Add documentation project from git repository",
+				"enablement": "false",
+				"category": "mdoc"
 			},
 			{
 				"command": "mdoc.project.update",
@@ -60,6 +66,10 @@
 				"command": "mdoc.project.closeSearch",
 				"title": "Close search",
 				"icon": "$(close)"
+			},
+			{
+				"command": "mdoc.project.remove",
+				"title": "Remove project"
 			}
 		],
 		"menus": {
@@ -78,6 +88,36 @@
 					"command": "mdoc.project.closeSearch",
 					"when": "view == mdocProjects && viewItem == search",
 					"group": "inline"
+				},
+				{
+					"command": "mdoc.project.remove",
+					"when": "view == mdocProjects && viewItem == project"
+				}
+			],
+			"view/title":[
+				{
+					"command": "mdoc.add.fromGit"
+				},
+				{
+					"command": "mdoc.add.fromFilesystem"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "mdoc.project.update",
+					"when": "false"
+				},
+				{
+					"command": "mdoc.project.search",
+					"when": "false"
+				},
+				{
+					"command": "mdoc.project.closeSearch",
+					"when": "false"
+				},
+				{
+					"command": "mdoc.project.remove",
+					"when": "false"
 				}
 			]
 		},

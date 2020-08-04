@@ -10,6 +10,7 @@ import dispose from '../util/dispose';
 import { DocSearch, SearchResult } from '../search/docSearch';
 import { getSearchHelpInHtml } from "./search"
 import { sanitizeCodeFence } from '../util/sanitizeHtml';
+import { dropSource } from '../extension';
 
 interface SearchState {
     query:string
@@ -90,6 +91,13 @@ class DocViewer implements vscode.Disposable {
                 this.projectProvider?.removeSearchNode(proj)
             }
         }))
+
+        context.subscriptions.push(vscode.commands.registerCommand("mdoc.project.remove", async (node:Node)=> {
+            if (node.project) {
+                this.projectProvider?.removeProject(node.project)
+                dropSource(node.project.source)
+            }
+        }))
     }
 
     #documentWatch:vscode.Disposable|undefined
@@ -142,6 +150,19 @@ class DocViewer implements vscode.Disposable {
                 this.openDocument(current.source, current.uri, current.title)
             }
         }
+    }
+
+    // replace all project sources with new ones from sources
+    async refreshProjects(sources:SourceAdapter[]) { 
+        // drop all old projects, and close current panel
+        dispose(...this.projects.map(proj => proj.subs))
+        this.#current = undefined
+        if (this.#viewerPanel) 
+            this.#viewerPanel.dispose()
+        this.projectProvider?.clear()
+        // add the refreshed list of projects
+        for (const source of sources) 
+            await this.addProject(source)
     }
 
     private get viewerPanel() {
@@ -510,6 +531,22 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
                                    project:proj, children: proj.projectTree.children})
         this.updateUriMappings(proj.source, this.nodes[idx])
         this.changed(this.nodes[idx])   
+    }
+
+    removeProject(proj:Project) {
+        const idx = this.nodes.findIndex(n => n.source == proj.source)
+        if (idx >= 0) {
+            this.changed()
+            // remove uri mappings
+            this.nodesByUri.delete(proj.source)
+            this.nodes.splice(idx, 1)
+        }
+    }
+
+    clear() {
+        this.nodes = []
+        this.nodesByUri.clear()
+        this.changed()
     }
 
     updateSearchForProject(proj:Project, ) {

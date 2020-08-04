@@ -10,9 +10,13 @@ export class GitSource implements SourceAdapter {
     private path:string = "" // path to the root of the repository on the file system
     #title = "<no title>"
     #rootUrl:URL
+    #uri:string
     get rootUrl() { return this.#rootUrl }
+    get uri() { return this.#uri }
 
-    constructor(location:URL) {
+    constructor(uri:string) {
+        this.#uri = uri
+        let location = new URL(uri)
         // location may be a hard disk location, also .git url to the repository
         // in case of repo url, the extension will manage the repository on the hard drive
         if (location.protocol == "file:") {

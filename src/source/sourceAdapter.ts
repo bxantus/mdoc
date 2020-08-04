@@ -14,6 +14,7 @@ import fetch from "node-fetch"
 export interface SourceAdapter extends Disposable {
     readonly title:string
     readonly rootUrl:URL // root URL of source's content (note this should be the local filesystem url, for cloned git repos)
+    readonly uri: string // unique URI identifying this source adapter (this links it to the projects)
     getProjectTree():Promise<ProjectTree>
     getDocument(uri:string):Promise<Document|undefined>
 
