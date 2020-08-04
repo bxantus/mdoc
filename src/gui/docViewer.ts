@@ -65,7 +65,7 @@ class DocViewer implements vscode.Disposable {
             if (node.project && !node.project.loading) {
                 node.project.loading = true
                 this.projectProvider?.changed(node)
-                const updateRes = await this.projects[0].source.update()
+                const updateRes = await node.project.source.update()
                 if (!updateRes.ok) {
                     vscode.window.showErrorMessage(`Couldn't update project. ${updateRes.errorMessage}`)
                 }
