@@ -93,19 +93,23 @@ class DocViewer implements vscode.Disposable {
     }
 
     #documentWatch:vscode.Disposable|undefined
-    #current:{source:SourceAdapter, uri:string, title:string}|undefined // info about currently opened doc. maybe later this will be attached to the given webview panel (if multiple panels are added)
+    #current:{source:SourceAdapter, uri:string, title:string, dirty:boolean}|undefined // info about currently opened doc. maybe later this will be attached to the given webview panel (if multiple panels are added)
 
     private async openDocument(source:SourceAdapter, docUri:string, title:string) {
         const document = await getDocument(source, docUri)
         if (document) {
-            this.#current = { source, uri: docUri, title }
+            this.#current = { source, uri: docUri, title, dirty: false }
             this.loadDocumentInViewer(document, title, {scrollToTop: true}) 
             this.#documentWatch?.dispose() // dispose old watch
             if (document.source == source) { // document may have external source, like a https:// uri for someting external
                 this.#documentWatch = source.watchDocument(docUri, async ()=> {
-                    const newDoc = await source.getDocument(docUri)
-                    if (newDoc)
-                        this.loadDocumentInViewer(newDoc, title, {scrollToTop: false}) 
+                    if (this.#viewerPanel?.visible) { // only update, when panel is in fg
+                        const newDoc = await source.getDocument(docUri)
+                        if (newDoc)
+                            this.loadDocumentInViewer(newDoc, title, {scrollToTop: false}) 
+                    } else if (this.#current) {
+                        this.#current.dirty = true // mark current content as dirty, when activated it will reload
+                    }
                 })
             }
         }
@@ -285,7 +289,7 @@ class DocViewer implements vscode.Disposable {
         
         this.viewerPanel.webview.html = htmlContent
         this.viewerPanel.title = "Search"
-        this.#current = { title: "Search", source:proj.source, uri: "" }
+        this.#current = { title: "Search", source:proj.source, uri: "", dirty: false }
         
         this.viewerPanel.reveal()
         this.viewerPanel.webview.postMessage({command:"scrollToTop"})
@@ -317,6 +321,15 @@ class DocViewer implements vscode.Disposable {
         panel.onDidDispose(()=> {
             this.#viewerPanel = undefined // remove the cached panel, a new one will open next time
             this.#current = undefined
+        })
+
+        panel.onDidChangeViewState( async e => {
+            if (panel.visible && this.#current?.dirty) { // did become visible and current content is dirty
+                const newDoc = await this.#current.source.getDocument(this.#current.uri)
+                if (newDoc)
+                    this.loadDocumentInViewer(newDoc, this.#current.title, {scrollToTop: false}) 
+                this.#current.dirty = false
+            }
         })
         panel.webview.onDidReceiveMessage(message=> {
             if (message.command == "openLink" && this.#current) {
