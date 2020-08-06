@@ -4,7 +4,7 @@ All notable changes to the "mdoc" extension are documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [1.1.0] - 2020-08-05
+## [1.1.1] - 2020-08-06
 ### Added
 - Current search will appear in the project tree, to aid navigation between search and results
 - Added documentation project management commands
