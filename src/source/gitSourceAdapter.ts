@@ -11,6 +11,8 @@ export class GitSource implements SourceAdapter {
     #title = "<no title>"
     #rootUrl:URL
     #uri:string
+    private remoteUrl = ""
+
     get rootUrl() { return this.#rootUrl }
     get uri() { return this.#uri }
 
@@ -21,6 +23,9 @@ export class GitSource implements SourceAdapter {
         // in case of repo url, the extension will manage the repository on the hard drive
         if (location.protocol == "file:") {
             this.path = decodeURIComponent(location.pathname).substr(1)
+        } else {
+            this.remoteUrl = uri
+            // todo: should clone repo if not already cloned (check project folder). folder name or path, should be generated based on remote url host and path
         }
         this.#rootUrl = location
         this.init()
@@ -168,7 +173,7 @@ export class GitSource implements SourceAdapter {
     }
 
     update() {
-        // todo: generalize git process spawning with promise interface, and use that here
+        // todo: generalize git process spawning with promise interface, and use that here, see the one in getRemoteUrl as a base
         return new Promise<UpdateResult>((resolve, reject)=>{
             const gitProcess = spawn("git pull", { 
                 shell:true,
@@ -193,5 +198,40 @@ export class GitSource implements SourceAdapter {
             })
             
         })        
+    }
+
+    async getRemoteUrl():Promise<string> {
+        if (this.remoteUrl.length > 0)
+            return this.remoteUrl
+        const urlRes = await new Promise<string>((resolve, reject)=>{ // todo: take in account this git process in process spawn generalization
+                                                        //       should use GitError class for throwing
+            const gitProcess = spawn("git remote get-url origin", { 
+                shell:true,
+                cwd: this.path,
+                stdio: [undefined, 'pipe', 'pipe' ] // stdout and stderr will be read
+            })
+            let errorMessage = ""
+            let output = ""
+            gitProcess.stderr.on('data', (chunk) => {
+                errorMessage += chunk.toString()
+            })
+            gitProcess.stdout.on('data', (chunk) => {
+                output += chunk.toString()
+            })
+            gitProcess.on('exit', (exitCode, signal) => {
+                if (signal != null) { // process was terminated
+                    reject( new Error(`'git remote get-url origin' was terminated by signal ${signal}`))
+                } else {
+                    if (exitCode == 0) { // normal run
+                        resolve(output)
+                    } else reject(new Error(errorMessage))
+                }
+            })
+            gitProcess.on('error', (err) => {
+                reject(new Error(`${err.message}`))
+            })
+        })
+        this.remoteUrl = urlRes.trim()
+        return this.remoteUrl
     }
 }

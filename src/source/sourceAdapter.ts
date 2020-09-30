@@ -23,6 +23,8 @@ export interface SourceAdapter extends Disposable {
 
 
     update():Promise<UpdateResult>
+    getRemoteUrl():Promise<string>  // URL of the remote git repository for this source. for sources added from git repos, this is the same as uri. 
+                                    // For sources from fs, this is the origin remote's url
 
     onProjectTreeChanged:Event<ProjectTree>
     onTitleChanged:Event<string>
