@@ -11,6 +11,7 @@ import { DocSearch, SearchResult } from '../search/docSearch';
 import { getSearchHelpInHtml } from "./search"
 import { sanitizeCodeFence } from '../util/sanitizeHtml';
 import { dropSource } from '../extension';
+import { showDocumentPicker } from './openPicker';
 
 interface SearchState {
     query:string
@@ -102,6 +103,12 @@ class DocViewer implements vscode.Disposable {
         }))
 
         context.subscriptions.push(vscode.window.registerUriHandler(this))
+
+        context.subscriptions.push(vscode.commands.registerCommand("mdoc.open", async ()=> {
+            const doc = await showDocumentPicker(this.projects);
+            if (doc)
+                this.openDocument(doc.source, doc.docUri, doc.label)
+        }))
     }
 
     async handleUri(uri:vscode.Uri) {
@@ -151,6 +158,9 @@ class DocViewer implements vscode.Disposable {
                         proj.docSearch.invalidateIndex()
                 })
             }
+            const documentNode = this.projectProvider?.getNodeForUri(source, docUri )
+            if (documentNode)
+                this.projectTree?.reveal(documentNode)
             return true
         }
         return false
@@ -413,10 +423,6 @@ class DocViewer implements vscode.Disposable {
                 const docUrl = new URL(message.href, base)
                 // the final url is the path part for mdoc urls, otherwise the whole thing (for http, https ex.)
                 const url = docUrl.protocol == "mdoc:" ? docUrl.pathname.substr(1) : docUrl.toString()
-                // reveal doc in the tree, if it is found in sidebar
-                const documentNode = this.projectProvider?.getNodeForUri(this.#current.source, url )
-                if (documentNode)
-                    this.projectTree?.reveal(documentNode)
                 
                 this.openDocument(this.#current.source, url, message.title)
             } else if (message.command == "search") {

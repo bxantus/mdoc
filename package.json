@@ -53,6 +53,11 @@
 				"category": "mdoc"
 			},
 			{
+				"command": "mdoc.open",
+				"title": "Open document",
+				"category": "mdoc"
+			},
+			{
 				"command": "mdoc.project.update",
 				"title": "Update project",
 				"icon": "$(sync)"
@@ -125,6 +130,12 @@
 			{
 				"view": "mdocProjects",
 				"contents": "No documentation projects added.\n[Add project from filesystem](command:mdoc.add.fromFilesystem)"
+			}
+		],
+		"keybindings": [
+			{
+				"key": "Ctrl+F1",
+				"command": "mdoc.open"
 			}
 		]
 	},
