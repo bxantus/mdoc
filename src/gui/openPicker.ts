@@ -1,4 +1,4 @@
-import { QuickPick, QuickPickItem, window } from 'vscode'
+import { QuickPick, QuickPickItem, window, Uri } from 'vscode'
 import { allTreeItems, ProjectTree, SourceAdapter, TreeItemVal } from '../source/sourceAdapter'
 
 interface Project {
@@ -11,7 +11,7 @@ export async function showDocumentPicker(projects:Project[]) {
     return quickPick.show()
 }
 
-class DocumentItem implements QuickPickItem {
+export class DocumentItem implements QuickPickItem {
     get docUri():string { return this.treeItem.docUri as string }
 
     get label():string { return this.treeItem.label }
@@ -29,15 +29,26 @@ class DocumentItem implements QuickPickItem {
     }
 }
 
+export class DocumentUriItem implements QuickPickItem {
+    get detail():string { return "mdoc URI" }
+
+    get uri() { return Uri.parse(this.label) }
+
+    constructor(public label:string) {
+    }
+}
+
 class DocumentPicker  {
-    constructor(private quickPick:QuickPick<DocumentItem>, private projects:Project[]) {
+    private items:readonly (DocumentItem|DocumentUriItem)[] = []
+    constructor(private quickPick:QuickPick<DocumentItem|DocumentUriItem>, private projects:Project[]) {
         quickPick.placeholder = "Open document"
         for (const proj of projects)
             this.fillItemsFrom(proj)
+        this.items = this.quickPick.items
     }
 
-    show():Promise<DocumentItem|undefined> {
-        return new Promise<DocumentItem|undefined>((resolve, reject) => {
+    show() {
+        return new Promise<DocumentItem|DocumentUriItem|undefined>((resolve, reject) => {
             this.quickPick.show()
             let hideListener = this.quickPick.onDidHide( e => resolve(undefined))
             this.quickPick.onDidAccept( e => {
@@ -45,6 +56,12 @@ class DocumentPicker  {
                 this.quickPick.hide()
                 const selected = this.quickPick.selectedItems[0]
                 resolve(selected)
+            })
+            this.quickPick.onDidChangeValue( filter => {
+                if (filter.startsWith("vscode://bxantus.mdoc/open/")) { // special open uri
+                    this.quickPick.items = [ new DocumentUriItem(filter)]
+                } else if (this.quickPick.items != this.items) 
+                    this.quickPick.items = this.items // restore original items
             })
         })
     }

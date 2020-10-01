@@ -11,7 +11,7 @@ import { DocSearch, SearchResult } from '../search/docSearch';
 import { getSearchHelpInHtml } from "./search"
 import { sanitizeCodeFence } from '../util/sanitizeHtml';
 import { dropSource } from '../extension';
-import { showDocumentPicker } from './openPicker';
+import { DocumentItem, showDocumentPicker } from './openPicker';
 
 interface SearchState {
     query:string
@@ -106,8 +106,10 @@ class DocViewer implements vscode.Disposable {
 
         context.subscriptions.push(vscode.commands.registerCommand("mdoc.open", async ()=> {
             const doc = await showDocumentPicker(this.projects);
-            if (doc)
-                this.openDocument(doc.source, doc.docUri, doc.label)
+            if (doc) {
+                if (doc instanceof DocumentItem ) this.openDocument(doc.source, doc.docUri, doc.label)
+                else this.handleUri(doc.uri)
+            }
         }))
     }
 
