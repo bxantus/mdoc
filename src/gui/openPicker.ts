@@ -30,7 +30,7 @@ export class DocumentItem implements QuickPickItem {
 }
 
 export class DocumentUriItem implements QuickPickItem {
-    get detail():string { return "mdoc URI" }
+    get detail():string { return "document URL" }
 
     get uri() { return Uri.parse(this.label) }
 
