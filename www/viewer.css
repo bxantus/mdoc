@@ -1,5 +1,77 @@
 :root {
     --side-width: 175px;
+    --header-top-margin: 15px;
+    --header-box-size: 35px;
+    --header-height: calc(var(--header-box-size) + 2 * var(--header-top-margin)); 
+    --markdown-margin: 26px; /* see markdown.css, value taken from there */
+    --body-padding: 20px;
+}
+
+h1, h2, h3, h4, img, a {
+    scroll-margin-top: var(--header-height);
+}
+
+#__header {
+    position: fixed;
+    left:0px;
+    top: 0px;
+    right: calc(var(--side-width) + var(--markdown-margin));
+    height: var(--header-height);
+    box-sizing: content-box;
+    
+    background-color: var(--vscode-editor-background);
+    z-index: 1;
+    
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    padding-left: calc(2 * var(--markdown-margin) + var(--body-padding));  /*adding body padding + html margin*/
+    padding-right: calc(var(--markdown-margin) + var(--body-padding));
+}
+
+#__header > div {
+    display: flex;
+    align-items: center;
+    height: var(--header-box-size);
+    border: solid 1px var(--vscode-textSeparator-foreground); 
+
+    white-space: nowrap;
+    overflow: hidden;
+
+    padding-left: 14px;
+    padding-bottom: 2px;
+}
+
+#__header .url-separator {
+    margin: 0 10px;
+    color: var(--vscode-textSeparator-foreground); /*var(--vscode-activityBar-inactiveForeground);/*var(--vscode-tab-inactiveBackground);*/
+    opacity: 70%;
+}
+
+#__header a {
+    cursor: pointer;
+}
+
+#__header button {
+    background-color: var(--vscode-badge-background);
+    color: var(--vscode-editor-foreground);
+    font-size: 12px;
+    border-style: none;
+    border-radius: 20px;
+    cursor: pointer;
+    padding-left: 8px;
+    padding-right: 9px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+#__header button.copy {
+    margin-left: 25px;
+}
+
+#__header button:focus {
+    outline: none;
 }
 
 #__side, #__side-search {
@@ -9,7 +81,7 @@
     right: 0px;
     top: 0px;
     margin-right: 26px;
-    margin-top: 26px;
+    margin-top: var(--header-top-margin);
     height: calc(100vh - 26px);
     overflow-y: scroll;
     overflow-x: hidden;
@@ -17,6 +89,7 @@
 
 #__side-search {
     line-height: 1.2em;
+    margin-top: 26px;
 }
 
 #__side a {
@@ -45,6 +118,7 @@
 }
 
 #__markdown-content {
+    margin-top: var(--header-height);
     margin-right: var(--side-width);
 }
 

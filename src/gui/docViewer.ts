@@ -277,7 +277,9 @@ class DocViewer implements vscode.Disposable {
             </head>
             <body>
                 <div id="__header">
-                    ${this.generateDocUrlHtml(document)}
+                    <div>
+                        ${this.generateDocUrlHtml(document, title)}
+                    </div>
                 </div>
                 <div id="__markdown-content">
                     ${markdownContent}
@@ -321,20 +323,26 @@ class DocViewer implements vscode.Disposable {
         return html
     }
 
-    private generateDocUrlHtml(document:Document) {
+    private generateDocUrlHtml(document:Document, title:string) {
         // get path for currently opened document
         let docPathHtml = ""
-        if (document.source) { // doc inside projects
-            let documentNode = this.projectProvider?.getNodeForUri(document.source, document.projectUrl )
+        const source = document.source ?? this.#current?.source;
+        if (source) { // doc inside projects, or external link, but we have a source at hand
+            let documentNode = this.projectProvider?.getNodeForUri(source, document.projectUrl )
             for (; documentNode; documentNode = documentNode.parent) // todo: maybe html parts should be encoded 
                 docPathHtml = `<a class="doc-url" >${documentNode.label}</a>`  
-                              + (docPathHtml.length > 0 ? `<span class="url-separator>">/</span>` : "") 
+                              + (docPathHtml.length > 0 ? `<span class="url-separator">/</span>` : "") 
                               + docPathHtml;
             
-            docPathHtml += `<button id="copy-url" class="copy">Copy Url</button>` // todo: this should be designed!
-        } else {
-            // document is coming from an external url, decide how to display url
+            if (document.source)
+                docPathHtml += `<button id="copy-url" class="copy button">copy url</button>` 
+            else {
+                // document is coming from an external url, decide how to implement copy
+            }
+        } else { // at least show title
+            docPathHtml = `<a class="doc-url" >${title}</a>`  
         }
+        
         return docPathHtml
     }
 
