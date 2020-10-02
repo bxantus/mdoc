@@ -2,7 +2,7 @@
 	"name": "mdoc",
 	"displayName": "mdoc - Markdown Documentation Viewer",
 	"description": "markdown documentation viewer for Visual Studio Code",
-	"version": "1.1.1",
+	"version": "1.2.0-beta.2",
 	"publisher": "bxantus",
 	"repository": {
 		"type": "git",
@@ -50,6 +50,11 @@
 				"command": "mdoc.add.fromGit",
 				"title": "Add documentation project from git repository",
 				"enablement": "false",
+				"category": "mdoc"
+			},
+			{
+				"command": "mdoc.open",
+				"title": "Open document",
 				"category": "mdoc"
 			},
 			{
@@ -125,6 +130,12 @@
 			{
 				"view": "mdocProjects",
 				"contents": "No documentation projects added.\n[Add project from filesystem](command:mdoc.add.fromFilesystem)"
+			}
+		],
+		"keybindings": [
+			{
+				"key": "Ctrl+F1",
+				"command": "mdoc.open"
 			}
 		]
 	},

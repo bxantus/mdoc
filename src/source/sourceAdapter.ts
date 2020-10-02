@@ -23,6 +23,8 @@ export interface SourceAdapter extends Disposable {
 
 
     update():Promise<UpdateResult>
+    getRemoteUrl():Promise<string>  // URL of the remote git repository for this source. for sources added from git repos, this is the same as uri. 
+                                    // For sources from fs, this is the origin remote's url
 
     onProjectTreeChanged:Event<ProjectTree>
     onTitleChanged:Event<string>
@@ -53,4 +55,25 @@ export async function getDocument(source:SourceAdapter, docUri:string):Promise<D
             return undefined
         }
     } else return source.getDocument(docUri)
+}
+
+/// This interface will be used when iterationg over the project tree
+export interface TreeItemVal {
+    label:string
+    docUri?:string
+    parent?:TreeItemVal
+}
+
+export function* allTreeItems(tree:ProjectTree, source:SourceAdapter) : Generator<TreeItemVal> {
+    const root = { label: source.title, docUri:'README.md' }
+    yield root
+    for (const child of tree.children) 
+        yield * allTreeChildren(child, root);
+}
+
+function *allTreeChildren(tree:TreeNode, parent:TreeItemVal) {
+    const itemVal = {label: tree.label, docUri: tree.docUri, parent}
+    yield itemVal
+    for (const child of tree.children) 
+        yield * allTreeChildren(child, itemVal);
 }

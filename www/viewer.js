@@ -39,3 +39,12 @@ window.addEventListener('message', event => {
     if (action)
         action(message)
 })
+
+window.addEventListener('load', () => {
+    const urlCopy = document.getElementById("copy-url")
+    urlCopy.onclick = e => {
+        vscode.postMessage({
+            command: "copyUrl"
+        })
+    }
+})

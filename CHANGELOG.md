@@ -4,6 +4,12 @@ All notable changes to the "mdoc" extension are documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.2.0] - 2020-09-30
+### Added
+- Path for currently opened document is displayed at the top of documentation window. This can copied.
+  - When such an URL is opened, the extension will handle it, and opens the document pointed at. Repositories are identified by their remote's (origin) url.
+- `mdoc.open` command (by default is bound to `Ctrl+F1`). This displays a quick pick, where you can search among all the documents. You can insert URL copied from the document headers too (for ex. when you receive an mdoc link from someone)
+
 ## [1.1.1] - 2020-08-06
 ### Added
 - Current search will appear in the project tree, to aid navigation between search and results

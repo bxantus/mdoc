@@ -11,6 +11,7 @@ import { DocSearch, SearchResult } from '../search/docSearch';
 import { getSearchHelpInHtml } from "./search"
 import { sanitizeCodeFence } from '../util/sanitizeHtml';
 import { dropSource } from '../extension';
+import { DocumentItem, showDocumentPicker } from './openPicker';
 
 interface SearchState {
     query:string
@@ -100,6 +101,40 @@ class DocViewer implements vscode.Disposable {
                 dropSource(node.project.source)
             }
         }))
+
+        context.subscriptions.push(vscode.window.registerUriHandler(this))
+
+        context.subscriptions.push(vscode.commands.registerCommand("mdoc.open", async ()=> {
+            const doc = await showDocumentPicker(this.projects);
+            if (doc) {
+                if (doc instanceof DocumentItem ) this.openDocument(doc.source, doc.docUri, doc.label)
+                else this.handleUri(doc.uri)
+            }
+        }))
+    }
+
+    async handleUri(uri:vscode.Uri) {
+        console.log("mdoc received an uri: ", uri.toString())
+        const pathCommand = uri.path.substr(1)
+        const commandEnd = pathCommand.indexOf("/")
+        const command = pathCommand.substr(0, commandEnd)
+        const arg = pathCommand.substr(commandEnd + 1)
+        if (command == "open") {
+            const urlEnd = arg.indexOf(".git/") + 4
+            const remoteUrl = arg.substr(0, arg.indexOf(".git/") + 4) // include the git repo's name
+            const docUrl = arg.substr(urlEnd + 1)
+            let success = false
+            for (const project of this.projects) {
+                const projUrl = (await project.source.getRemoteUrl()).replace("://", "/") // the same change is performed, as when original url is created
+                if (projUrl == remoteUrl) {
+                    const documentNode = this.projectProvider?.getNodeForUri(project.source, docUrl )
+                    success = await this.openDocument(project.source, docUrl, documentNode?.label ?? "")
+                    break
+                }
+            }
+            if (!success)
+                vscode.window.showErrorMessage(`Can't open document '${docUrl}' in '${remoteUrl}'`)
+        }
     }
 
     #documentWatch:vscode.Disposable|undefined
@@ -125,8 +160,12 @@ class DocViewer implements vscode.Disposable {
                         proj.docSearch.invalidateIndex()
                 })
             }
+            const documentNode = this.projectProvider?.getNodeForUri(source, docUri )
+            if (documentNode)
+                this.projectTree?.reveal(documentNode)
+            return true
         }
-        
+        return false
     }
 
     async addProject(projSource:SourceAdapter) {
@@ -227,6 +266,7 @@ class DocViewer implements vscode.Disposable {
         md.use(markdownItAnchor, {level: [1, 2, 3], slugify: (s:string) => slugify(s, slugs)})
         const markdownContent = md.render(document.markdownContent.toString())
 
+        
         const htmlContent = 
             `
             <head>
@@ -236,6 +276,11 @@ class DocViewer implements vscode.Disposable {
                 <script src="${viewerJs}"></script>
             </head>
             <body>
+                <div id="__header">
+                    <div>
+                        ${this.generateDocUrlHtml(document, title)}
+                    </div>
+                </div>
                 <div id="__markdown-content">
                     ${markdownContent}
                 </div>
@@ -276,6 +321,29 @@ class DocViewer implements vscode.Disposable {
         html += "</ul>\n" // close outer heading
         
         return html
+    }
+
+    private generateDocUrlHtml(document:Document, title:string) {
+        // get path for currently opened document
+        let docPathHtml = ""
+        const source = document.source ?? this.#current?.source;
+        if (source) { // doc inside projects, or external link, but we have a source at hand
+            let documentNode = this.projectProvider?.getNodeForUri(source, document.projectUrl )
+            for (; documentNode; documentNode = documentNode.parent) // todo: maybe html parts should be encoded 
+                docPathHtml = `<a class="doc-url" >${documentNode.label}</a>`  
+                              + (docPathHtml.length > 0 ? `<span class="url-separator">/</span>` : "") 
+                              + docPathHtml;
+            
+            if (document.source)
+                docPathHtml += `<button id="copy-url" class="copy button">copy url</button>` 
+            else {
+                // document is coming from an external url, decide how to implement copy
+            }
+        } else { // at least show title
+            docPathHtml = `<a class="doc-url" >${title}</a>`  
+        }
+        
+        return docPathHtml
     }
 
     private async loadSearchInViewer(proj:Project) {
@@ -358,16 +426,13 @@ class DocViewer implements vscode.Disposable {
                 this.#current.dirty = false
             }
         })
-        panel.webview.onDidReceiveMessage(message=> {
+        panel.webview.onDidReceiveMessage(async message=> {
+            // todo: should register message handlers in a dictionary (object) and call that here instead of if else
             if (message.command == "openLink" && this.#current) {
                 const base = /^[a-z][a-z\d.+-]+:/i.test(this.#current.uri) ? this.#current.uri : `mdoc:///${this.#current.uri}` // if current has no scheme, we add one, otherwise URL parse fails
                 const docUrl = new URL(message.href, base)
                 // the final url is the path part for mdoc urls, otherwise the whole thing (for http, https ex.)
                 const url = docUrl.protocol == "mdoc:" ? docUrl.pathname.substr(1) : docUrl.toString()
-                // reveal doc in the tree, if it is found in sidebar
-                const documentNode = this.projectProvider?.getNodeForUri(this.#current.source, url )
-                if (documentNode)
-                    this.projectTree?.reveal(documentNode)
                 
                 this.openDocument(this.#current.source, url, message.title)
             } else if (message.command == "search") {
@@ -376,6 +441,10 @@ class DocViewer implements vscode.Disposable {
                     project.searchState.query = message.query
                     this.scheduleSearch(project, message.query)
                 }
+            } else if (message.command == "copyUrl" && this.#current) {
+                const remoteUrl = (await this.#current.source.getRemoteUrl()).replace("://", "/")
+
+                vscode.env.clipboard.writeText(`vscode://bxantus.mdoc/open/${remoteUrl}/${this.#current.uri}`); 
             }
         })
         return panel
