@@ -127,7 +127,7 @@ class DocViewer implements vscode.Disposable {
             for (const project of this.projects) {
                 const projUrl = (await project.source.getRemoteUrl()).replace("://", "/") // the same change is performed, as when original url is created
                 if (projUrl == remoteUrl) {
-                    const documentNode = this.projectProvider?.getNodeForUri(project.source, docUrl )
+                    const documentNode = this.projectProvider?.getNodeForUri(project.source, encodeURI(docUrl) )
                     success = await this.openDocument(project.source, docUrl, documentNode?.label ?? "")
                     break
                 }
@@ -406,7 +406,8 @@ class DocViewer implements vscode.Disposable {
                 enableScripts: true,
                 localResourceRoots: [vscode.Uri.file(this.#extensionPath), 
                                      ...this.projects.filter(proj => proj.source.rootUrl.protocol == "file:")
-                                     .map(proj => vscode.Uri.parse(proj.source.rootUrl.toString()))]
+                                     .map(proj => vscode.Uri.parse(proj.source.rootUrl.toString()))],
+                retainContextWhenHidden: true
             },
         );       
         panel.iconPath = {
