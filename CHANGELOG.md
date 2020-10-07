@@ -4,6 +4,11 @@ All notable changes to the "mdoc" extension are documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.2.1] - 2020 -10-07
+### Added
+- Open document source command to document nodes in project tree. Project nodes have an additional item added, for opening the documentation index
+- Document webview tab retains its position and state while hidden
+
 ## [1.2.0] - 2020-09-30
 ### Added
 - Path for currently opened document is displayed at the top of documentation window. This can copied.

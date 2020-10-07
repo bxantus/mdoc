@@ -23,6 +23,8 @@ Another benefit of using **mdoc**, is that you don't have to switch between vsco
 ![search example](img/search.png)
 - Auto update project panel and the currently opened document on changes
 - Support for linking to markdown files in external documentations (raw git url is needed)
+- Quick pick for searching among documents (by title). Use the *mdoc: Open document command*(`Ctrl+F1`) to display the quick pick dialog
+- Open document source: right click on document nodes in the project tree, to bring up the context menu and choose *Open document source* to open the corresponding `.md` file. On project nodes `index.md` can be opened as well.
 
 ## How to create a project
 
