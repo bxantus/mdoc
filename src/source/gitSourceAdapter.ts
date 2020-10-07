@@ -57,6 +57,10 @@ export class GitSource implements SourceAdapter {
         return undefined
     }
 
+    getDocumentFileLocation(uri:string):string {
+        return `${this.path}/${decodeURIComponent(uri)}` 
+    }
+
     watchDocument(uri:string, onChange:()=>void) {
         const watch = fsWatch(`${this.path}/${decodeURIComponent(uri)}`, undefined, async (event) => { // todo: decodeURIComponenet could throw exceptions, fsWatch too, if name is invalid
             if (event == "change") 

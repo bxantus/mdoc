@@ -12,6 +12,7 @@ import { getSearchHelpInHtml } from "./search"
 import { sanitizeCodeFence } from '../util/sanitizeHtml';
 import { dropSource } from '../extension';
 import { DocumentItem, showDocumentPicker } from './openPicker';
+import { registerMdocCommands } from './mdocCommands';
 
 interface SearchState {
     query:string
@@ -26,7 +27,7 @@ interface Project {
     loading?:boolean
 }
 
-class DocViewer implements vscode.Disposable {
+export class DocViewer implements vscode.Disposable {
     projects:Project[] = []
     projectProvider:ProjectTreeProvider|undefined
     projectTree:vscode.TreeView<Node>|undefined
@@ -48,6 +49,8 @@ class DocViewer implements vscode.Disposable {
         this.#extensionPath = context.extensionPath
         this.projectProvider = new ProjectTreeProvider(this)
         this.projectTree = vscode.window.createTreeView<Node>("mdocProjects", {treeDataProvider: this.projectProvider})
+        
+        registerMdocCommands(context, this)
 
         context.subscriptions.push(vscode.commands.registerCommand("mdoc.openFromSidebar", async (node: Node) => {
             const docUri = node.docUri
@@ -480,7 +483,8 @@ class DocViewer implements vscode.Disposable {
 
 export const docViewer = new DocViewer();
 
-class Node { // a node in the project tree sidebar
+// todo: could split the code below to projectTree.ts (together with Project class)
+export class Node { // a node in the project tree sidebar
     parent?: Node
     label:string
     docUri?:string
@@ -542,7 +546,8 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
         } else {
             item.iconPath = node.docUri ? new vscode.ThemeIcon("file-text") : new vscode.ThemeIcon("circle-slash")
         }
-        if (node.docUri && (node.docUri.startsWith("http:") || node.docUri.startsWith("https:")))
+        const isLinkedDocument = node.docUri && (node.docUri.startsWith("http:") || node.docUri.startsWith("https:"))
+        if (isLinkedDocument)
             item.iconPath = new vscode.ThemeIcon("link") // linked document
         if (node.project) { // project node
             item.contextValue = "project"
@@ -562,6 +567,8 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
                 title: "Open search",
                 arguments: [node]
             }
+        } else if (node.docUri && !isLinkedDocument) { // only docs with valid URI count as docNode
+            item.contextValue = "docNode"
         }
         if (!item.command) {
             item.command = {

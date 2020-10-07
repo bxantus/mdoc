@@ -58,6 +58,14 @@
 				"category": "mdoc"
 			},
 			{
+				"command": "mdoc.openSourceFromSidebar",
+				"title": "Open document source"
+			},
+			{
+				"command": "mdoc.openIndexFromSidebar",
+				"title": "Open `index.md`"
+			},
+			{
 				"command": "mdoc.project.update",
 				"title": "Update project",
 				"icon": "$(sync)"
@@ -96,15 +104,28 @@
 				},
 				{
 					"command": "mdoc.project.remove",
-					"when": "view == mdocProjects && viewItem == project"
+					"when": "view == mdocProjects && viewItem == project",
+					"group": "2_project_commands"
+				},
+				{
+					"command": "mdoc.openSourceFromSidebar", 
+					"when": "view == mdocProjects && viewItem =~ /^docNode$|^project$/)",
+					"group": "1_node_commands"
+				},
+				{
+					"command": "mdoc.openIndexFromSidebar",
+					"when": "view == mdocProjects && viewItem == project",
+					"group": "1_node_commands"
 				}
 			],
 			"view/title":[
 				{
-					"command": "mdoc.add.fromGit"
+					"command": "mdoc.add.fromGit",
+					"when": "view == mdocProjects"
 				},
 				{
-					"command": "mdoc.add.fromFilesystem"
+					"command": "mdoc.add.fromFilesystem",
+					"when": "view == mdocProjects"
 				}
 			],
 			"commandPalette": [
@@ -122,6 +143,14 @@
 				},
 				{
 					"command": "mdoc.project.remove",
+					"when": "false"
+				},
+				{
+					"command": "mdoc.openSourceFromSidebar",
+					"when": "false"
+				},
+				{
+					"command": "mdoc.openIndexFromSidebar",
 					"when": "false"
 				}
 			]
