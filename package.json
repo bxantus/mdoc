@@ -108,7 +108,7 @@
 					"group": "2_project_commands"
 				},
 				{
-					"command": "mdoc.openSourceFromSidebar", 
+					"command": "mdoc.openSourceFromSidebar",
 					"when": "view == mdocProjects && viewItem =~ /^docNode$|^project$/)",
 					"group": "1_node_commands"
 				},
@@ -118,7 +118,7 @@
 					"group": "1_node_commands"
 				}
 			],
-			"view/title":[
+			"view/title": [
 				{
 					"command": "mdoc.add.fromGit",
 					"when": "view == mdocProjects"
