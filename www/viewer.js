@@ -104,6 +104,7 @@ class FindWidget {
         }
         this.optRegex.onclick = this.optCaseSensitive.onclick = evt => {
             evt.currentTarget.classList.toggle("active")
+            this.focus()
         }
     }
     
