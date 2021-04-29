@@ -48,9 +48,16 @@ window.addEventListener('load', () => {
         })
     }
     const findWidget = new FindWidget()
-    findWidget.open()
     // todo: on `Ctrl+F` should toggle find
     //       on ESC hide it
+    window.addEventListener("keydown", keyEvt => {
+        if (keyEvt.key == "Escape") {
+            if (findWidget.isOpen) findWidget.close()
+        } else if (keyEvt.key == "f" && (keyEvt.ctrlKey || keyEvt.metaKey)) {
+            if (!findWidget.isOpen) findWidget.open()
+            findWidget.focus()
+        }
+    })
 })
 
 class FindWidget {
@@ -99,6 +106,10 @@ class FindWidget {
             evt.currentTarget.classList.toggle("active")
         }
     }
+    
+    get isOpen() {
+        return this.element.classList.contains("open")
+    }
 
     open() {
         const classes = this.element.classList
@@ -106,13 +117,14 @@ class FindWidget {
         classes.add("open")
     }
 
-    get isOpen() {
-        this.element.classList.contains("open")
-    }
 
     close() {
         const classes = this.element.classList
         classes.add("closed")
         classes.remove("open")
+    }
+
+    focus() {
+        this.input.focus()
     }
 }

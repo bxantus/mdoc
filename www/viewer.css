@@ -185,7 +185,7 @@ input, input:focus {
 /* find box */
 #__find {
     position: fixed;
-    transition: top 500ms;
+    transition: top 300ms;
     z-index: 1;
     display: block;
     position: fixed;
@@ -203,11 +203,11 @@ input, input:focus {
 }
 
 #__find.open {
-    top: 10px;
+    top: 0px;
 }
 
 #__find.closed {
-    top: -42px;
+    top: -33px;
 }
 
 #__find > .input-container {
