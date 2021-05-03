@@ -298,5 +298,13 @@ input, input:focus {
 #__find .disabled {
     opacity: 0.3;
 }
+/* find results */
+mark {
+    background-color: var(--vscode-editor-findMatchBackground);
+    color:inherit;
+}
 
-/* fill-opacity: 0.7; */
+mark.current {
+    background-color: var(--vscode-editor-findMatchHighlightBackground);
+    color: inherit;
+}

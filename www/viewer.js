@@ -119,6 +119,7 @@ class FindWidget {
                             this.prevResult, this.nextResult, this.closeIco)
         this.results = []
         this.resultIdx = 1
+        this.currentResult = undefined
         this.setup()
     }
 
@@ -161,16 +162,20 @@ class FindWidget {
     }
 
 
-    close() {
-        const classes = this.element.classList
-        classes.add("closed")
-        classes.remove("open")
+    reset() {
         this.input.value = ""
         this.input.dispatchEvent(new Event("input"))
         this.nextResult.classList.add("disabled")
         this.prevResult.classList.add("disabled")
         this.results = []
         this.jumpToResult(0) // will clear result text
+    }
+
+    close() {
+        const classes = this.element.classList
+        classes.add("closed")
+        classes.remove("open")
+        this.reset()
     }
 
     focus() {
@@ -202,11 +207,15 @@ class FindWidget {
         if (idx < 0) idx = this.results.length - 1
         else if (idx >= this.results.length) idx = 0
         this.resultIdx = idx
+        this.currentResult?.classList.remove("current")
         if (this.results.length > 0) {
-            this.results[idx].scrollIntoView()
+            this.currentResult = this.results[idx]
+            this.currentResult.scrollIntoView()
+            this.currentResult.classList.add("current")
             this.findPosition.textContent = `${this.resultIdx + 1} of ${this.results.length}`
         } else {
             this.findPosition.textContent = "No Results"
+            this.currentResult = undefined
         }
     }
 
