@@ -5,11 +5,9 @@
     --header-height: calc(var(--header-box-size) + 2 * var(--header-top-margin)); 
     --markdown-margin: 26px; /* see markdown.css, value taken from there */
     --body-padding: 20px;
+    scroll-padding: var(--header-height);
 }
 
-h1, h2, h3, h4, img, a {
-    scroll-margin-top: var(--header-height);
-}
 
 #__header {
     position: fixed;
@@ -180,4 +178,133 @@ input, input:focus {
 
 #results.search span.search-match {
     background-color: var(--vscode-editor-findMatchHighlightBackground)
+}
+
+/* find box */
+#__find {
+    position: fixed;
+    transition: top 300ms;
+    z-index: 1;
+    display: block;
+    position: fixed;
+    
+    right: 28px;
+    height: 32px;
+    padding: 0 10px;
+    
+    background-color: var(--vscode-editorWidget-background);
+    box-shadow: 0 2px 8px var(--vscode-widget-shadow);
+    font-size: 13px;
+    color: var(--vscode-editorSuggestWidget-foreground);
+    
+    white-space: nowrap;
+}
+
+#__find.open {
+    top: 0px;
+}
+
+#__find.closed {
+    top: -33px;
+}
+
+#__find > .input-container {
+    position: relative;
+    display: inline-block;
+    margin-top: 4px;
+    height: 25px;
+    align-items: center;
+    
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-input-background);
+}
+
+#__find input {
+    display: inline-block;
+    vertical-align: top;
+    padding: 3px 47px 3px 5px;
+    border: 0;
+    height: 18px;
+    width: 159px;
+    
+    color: var(--vscode-input-foreground);
+    font-size: 13px;
+    font-family: inherit;
+}
+
+#__find > .input-container:focus-within {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px !important;
+    opacity: 1!important;
+}
+
+#__find.error > .input-container:focus-within {
+    outline: 1px solid var(--vscode-inputValidation-errorBorder);
+}
+
+#__find  .option {
+    display: block;
+    position: absolute;
+    top: 3px;
+    height: 20px;
+    width: 20px;
+    line-height: 20px;
+    font-size: 16px;
+    cursor: pointer;
+    user-select: none;
+    text-align: center;
+    color: var(--vscode-input-foreground);
+    opacity: 0.7;
+}
+
+#__find  .option:hover, #__find  .option.active {
+    opacity: 1;
+}
+
+#__find  .option.active {
+    outline: 1px solid var(--vscode-inputOption-activeBorder);
+    outline-offset: -1px;
+    background-color: var(--vscode-inputOption-activeBackground);
+}
+
+#__find  .option.regex {
+    right: 2px;
+}
+
+#__find  .option.case {
+    right: 24px;
+}
+
+#__find span.position {
+    min-width: 75px;
+    margin-left: 10px;
+    font-size: 12px;
+}
+#__find span.position, #__find .action {
+    display: inline-block;
+    user-select: none;
+}
+
+#__find .action {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    vertical-align: top;
+    margin: 7px 0 0 6px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#__find .disabled {
+    opacity: 0.3;
+}
+/* find results */
+mark {
+    background-color: var(--vscode-editor-findMatchBackground);
+    color:inherit;
+}
+
+mark.current {
+    background-color: var(--vscode-editor-findMatchHighlightBackground);
+    color: inherit;
 }
