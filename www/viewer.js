@@ -149,6 +149,11 @@ class FindWidget {
                 this.jumpToResult(this.resultIdx + delta)
             }
         }
+        this.element.ontransitionend = e => {
+            if (this.element.classList.contains("closed")) {
+                this.reset()
+            }
+        }
     }
     
     get isOpen() {
@@ -175,7 +180,6 @@ class FindWidget {
         const classes = this.element.classList
         classes.add("closed")
         classes.remove("open")
-        this.reset()
     }
 
     focus() {
