@@ -240,6 +240,10 @@ input, input:focus {
     opacity: 1!important;
 }
 
+#__find.error > .input-container:focus-within {
+    outline: 1px solid var(--vscode-inputValidation-errorBorder);
+}
+
 #__find  .option {
     display: block;
     position: absolute;
