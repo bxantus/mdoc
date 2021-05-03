@@ -5,11 +5,9 @@
     --header-height: calc(var(--header-box-size) + 2 * var(--header-top-margin)); 
     --markdown-margin: 26px; /* see markdown.css, value taken from there */
     --body-padding: 20px;
+    scroll-padding: var(--header-height);
 }
 
-h1, h2, h3, h4, img, a, mark {
-    scroll-margin-top: var(--header-height);
-}
 
 #__header {
     position: fixed;
