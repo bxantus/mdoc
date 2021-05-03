@@ -265,6 +265,7 @@ export class DocViewer implements vscode.Disposable {
         const viewerCss = asWebviewUri(path.join(this.#extensionPath, "www", "viewer.css"))
         const viewerJs = asWebviewUri(path.join(this.#extensionPath, "www", "viewer.js"))
         const codiconsCss = asWebviewUri(path.join(this.#extensionPath, "node_modules", "vscode-codicons", "dist", "codicon.css"))
+        const markJs = asWebviewUri(path.join(this.#extensionPath, "node_modules", "mark.js", "dist", "mark.min.js"))
         
         let slugs = new Map<string, number>()
         md.use(markdownItAnchor, {level: [1, 2, 3], slugify: (s:string) => slugify(s, slugs)})
@@ -278,6 +279,7 @@ export class DocViewer implements vscode.Disposable {
                 <link rel="stylesheet" type="text/css" href="${hiliteCss}">
                 <link rel="stylesheet" type="text/css" href="${viewerCss}">
                 <link rel="stylesheet" type="text/css" href="${codiconsCss}">
+                <script src="${markJs}"></script>
                 <script src="${viewerJs}"></script>
             </head>
             <body>

@@ -48,8 +48,8 @@ window.addEventListener('load', () => {
         })
     }
     const findWidget = new FindWidget()
-    // todo: on `Ctrl+F` should toggle find
-    //       on ESC hide it
+    window.top.findWidget = findWidget // for easier debugging
+    const marker = new Mark(document.getElementById("__markdown-content"))
     window.addEventListener("keydown", keyEvt => {
         if (keyEvt.key == "Escape") {
             if (findWidget.isOpen) findWidget.close()
@@ -57,6 +57,18 @@ window.addEventListener('load', () => {
             if (!findWidget.isOpen) findWidget.open()
             findWidget.focus()
         }
+    })
+    findWidget.onInputChanged(val => {
+        marker.unmark({done() {
+            if (val != "") {
+                marker.mark(val, {
+                    done: numRes => {
+                        const results = document.querySelectorAll("mark")
+                        findWidget.setResults(results)
+                    }
+                })
+            } else findWidget.setResults([])
+        }})
     })
 })
 
@@ -86,6 +98,7 @@ class FindWidget {
         this.element.append(inputContainer,
                             this.findPosition,
                             this.prevResult, this.nextResult, this.closeIco)
+        this.results = []
         this.setup()
     }
 
@@ -127,5 +140,19 @@ class FindWidget {
 
     focus() {
         this.input.focus()
+    }
+
+    onInputChanged(listener) {
+        this.input.addEventListener("input",  e => listener(this.input.value))
+    }
+
+    setResults(results) {
+        this.results = results
+        if (results && results.length > 0) {
+            results[0].scrollIntoView()
+            this.findPosition.textContent = `1 of ${results.length}`
+        } else {
+            this.findPosition.textContent = "No Results"
+        }
     }
 }
