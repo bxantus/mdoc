@@ -21,6 +21,8 @@ Another benefit of using **mdoc**, is that you don't have to switch between vsco
 ![toc generation](img/toc-generation.png)
 - Full text search for all documents listed in `index.md`, powered by [lunr](https://lunrjs.com/)
 ![search example](img/search.png)
+- Find on page feature: it works similar to vscode's built-in find feature. Press `Ctrl+F` to open the Find Widget over the current page.    
+If there are more than one matched result, you can press `Enter` and `Shift+Enter` to navigate to next or previous result when the find input box is focused
 - Auto update project panel and the currently opened document on changes
 - Support for linking to markdown files in external documentations (raw git url is needed)
 - Quick pick for searching among documents (by title). Use the *mdoc: Open document command*(`Ctrl+F1`) to display the quick pick dialog
