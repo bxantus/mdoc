@@ -48,7 +48,7 @@ window.addEventListener('load', () => {
         })
     }
     const findWidget = new FindWidget()
-    window.top.findWidget = findWidget // for easier debugging
+    globalThis.findWidget = findWidget // for easier debugging, can be accessed as: globalThis.frames[0].findWidget
     const marker = new Mark(document.getElementById("__markdown-content"))
     window.addEventListener("keydown", keyEvt => {
         if (keyEvt.key == "Escape") {
