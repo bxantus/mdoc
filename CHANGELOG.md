@@ -4,6 +4,10 @@ All notable changes to the "mdoc" extension are documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.3.1] - 2021-08-31
+### Fixed
+- Find on page widget wasn't showing in newer versions of vscode (webViews have transitioned to use iframes, and the code relied on separate web pages)
+
 ## [1.3.0] - 2021-05-04
 ### Added
 - Find on page feature: press `Ctrl+F` to open the Find Widget over the current page
