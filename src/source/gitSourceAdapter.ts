@@ -94,6 +94,8 @@ export class GitSource implements SourceAdapter {
     #titleChanged = new EventEmitter<string>()
 
     private async loadProjectTree() {
+        this.#title = this.path.substr(this.path.lastIndexOf('/') + 1) // title will become the directory of repo
+        // note: if title isn't found we could parse it as the first heading from README.md
         try {
             // fetch index.md and load structure from it
             const contents = await fs.readFile(`${this.path}/index.md`) 
@@ -105,7 +107,6 @@ export class GitSource implements SourceAdapter {
             // todo:  walk the directories in the repository and build from that
         } 
         
-        this.#title = this.path.substr(this.path.lastIndexOf('/') + 1) // title will become the directory of repo
         return { children:[] }
     }
 
