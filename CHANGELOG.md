@@ -4,6 +4,12 @@ All notable changes to the "mdoc" extension are documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.3.2] - 2022-02-04
+### Changed
+- Better compatibility with [docsify](https://docsifyjs.netlify.app/#/): when `index.md` is used as a sidebar, you can use it both in docsify and mdoc.    
+docsify doesn't support first level headings in sidebar md files. But mdoc relied on it to display the project's title.    
+Now if you leave out this heading, mdoc will fall back to the repository's folder name. With this change 
+
 ## [1.3.1] - 2021-08-31
 ### Fixed
 - Find on page widget wasn't showing in newer versions of vscode (webViews have transitioned to use iframes, and the code relied on separate web pages)
