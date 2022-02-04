@@ -198,7 +198,7 @@
 		"mark.js": "^8.11.1",
 		"markdown-it": "^11.0.0",
 		"markdown-it-anchor": "^5.3.0",
-		"node-fetch": "^2.6.1",
+		"node-fetch": "^2.6.7",
 		"vscode-codicons": "0.0.16"
 	}
 }
