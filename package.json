@@ -196,7 +196,7 @@
 		"highlight.js": "^10.4.1",
 		"lunr": "^2.3.8",
 		"mark.js": "^8.11.1",
-		"markdown-it": "^11.0.0",
+		"markdown-it": "^12.3.2",
 		"markdown-it-anchor": "^5.3.0",
 		"node-fetch": "^2.6.7",
 		"vscode-codicons": "0.0.16"
