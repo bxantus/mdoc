@@ -8,7 +8,7 @@ You don't have to "build" your documentation in static html pages, to be able to
 
 **Documentations view container with *Typescript Handbook*:**
 
-![Typescript handbook in documentatations view conatiner](img/documentation-view-container.png)
+![Typescript handbook in documentations view container](img/documentation-view-container.png)
 
 All files will be opened in a viewer tab, you can pin it if you want, or can use it in split views.
 
