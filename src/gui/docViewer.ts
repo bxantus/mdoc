@@ -144,6 +144,9 @@ export class DocViewer implements vscode.Disposable {
     #current:{source:SourceAdapter, uri:string, title:string, dirty:boolean}|undefined // info about currently opened doc. maybe later this will be attached to the given webview panel (if multiple panels are added)
 
     private async openDocument(source:SourceAdapter, docUri:string, title:string) {
+        if (!docUri.endsWith(".md") && !docUri.startsWith("http://") && !docUri.startsWith("https://"))  // not a markdown document, and not remote
+            return this.openInVscode(source, docUri)// open it in vscode 
+        
         const document = await getDocument(source, docUri)
         if (document) {
             this.#current = { source, uri: docUri, title, dirty: false }
@@ -169,6 +172,13 @@ export class DocViewer implements vscode.Disposable {
             return true
         }
         return false
+    }
+    
+    private async openInVscode(source:SourceAdapter, docUri:string) {
+        const filePath = source.getDocumentFileLocation(docUri)
+        await vscode.commands.executeCommand('vscode.open', vscode.Uri.file(filePath))
+        
+        return true
     }
 
     async addProject(projSource:SourceAdapter) {
