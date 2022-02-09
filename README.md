@@ -3,7 +3,8 @@
 **mdoc** is an offline markdown documentation viewer. It supports markdown "projects", hosted in git repositories.   
 You don't have to "build" your documentation in static html pages, to be able to browse it. Whenever the docs are updated, you just have to pull in the changes (you can use the update command for this), and you can browse the latest version!        
 
-**mdoc** provides a convenient way to open and browse your documentations inside vscode. Markdown files will be rendered on the fly when you open them (just like the builtin Markdown Preview does). **mdoc** contributes a new *Documentations* view container to the activity bar. This contains the tree structure of loaded projects.
+**mdoc** provides a convenient way to open and browse your documentations inside vscode. Markdown files will be rendered on the fly when you open them (just like the builtin Markdown Preview does). You can also add notebooks (or other script files) to the project, these will be opened with the associated vscode editor.     
+**mdoc** contributes a new *Documentations* view container to the activity bar. This contains the tree structure of loaded projects.
 
 **Documentations view container with *Typescript Handbook*:**
 
@@ -33,7 +34,7 @@ If there are more than one matched result, you can press `Enter` and `Shift+Ente
 ### Structure
 
 A project needs an `index.md` file for its structure to appear in the documentation panel.   
-The projects name will be inferred from the first level 1 heading in `index.md`.
+The projects name will be inferred from the first level 1 heading in `index.md` or from the repository folder name.
 
 For example in  *Typescript handbook* for mdoc, `index.md` looks like this:
 ```md
@@ -56,7 +57,7 @@ You may nest lists in this way any depth you want
 
 ### Opening page
 
-The opening page for the project is `README.md`, as usual for git repositories. When you click on the main project node
+The opening page for the project is `README.md`, as usual for git repositories. This page shows up also, when you click on the main project node
 
 ### Example project
 
