@@ -4,6 +4,14 @@ All notable changes to the "mdoc" extension are documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.4.0] - 2024-03-19
+### Changed
+- Synced syntax highliting in mdoc with vscode's latest. This is achieved by using the same CSS styles as vscode for markdown preview
+
+### Fixed
+- Fixed when clause for the `"mdoc.openSourceFromSidebar"` command. Because of this the command (_Open document source_) was 
+  shown in the context menu for all custom treeviews
+
 ## [1.3.3] - 2022-02-09
 ## Added
 - Support for non-markdown documents in links (also in `index.md`). These files will be opened with the associated vscode editor. 
