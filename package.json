@@ -109,7 +109,7 @@
 				},
 				{
 					"command": "mdoc.openSourceFromSidebar",
-					"when": "view == mdocProjects && viewItem =~ /^docNode$|^project$/)",
+					"when": "view == mdocProjects && viewItem =~ /^docNode$|^project$/",
 					"group": "1_node_commands"
 				},
 				{
