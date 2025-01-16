@@ -345,16 +345,19 @@ export class DocViewer implements vscode.Disposable {
             if (!href) return ""
             return `href="${href}"`
         }
-        // get path for currently opened document
         let docPathHtml = ""
+        // get path for currently opened document
         const source = document.source ?? this.#current?.source;
         if (source) { // doc inside projects, or external link, but we have a source at hand
             let documentNode = this.projectProvider?.getNodeForUri(source, document.projectUrl )
-            for (; documentNode; documentNode = documentNode.parent) // todo: maybe html parts should be encoded 
-                docPathHtml = `<a class="doc-url" ${hrefAttr(documentNode.docUri)}">${documentNode.label}</a>`  
-                              + (docPathHtml.length > 0 ? `<span class="url-separator">/</span>` : "") 
-                              + docPathHtml;
-            
+            const path:string[] = []
+            for (; documentNode; documentNode = documentNode.parent) { // todo: maybe html parts should be encoded 
+                path.push(documentNode.docUri
+                    ? `<a class="doc-url" ${hrefAttr(documentNode.docUri)}">${documentNode.label}</a>`  
+                    : `<span class="doc-url">${documentNode.label}</span>`  
+                )
+            }
+            docPathHtml = path.reverse().join(`<span class="url-separator">/</span>`)
             if (document.source)
                 docPathHtml += `<button id="copy-url" class="copy button">copy url</button>` 
             else {
