@@ -72,6 +72,14 @@
     outline: none;
 }
 
+#__header .doc-url {
+    color: var(--vscode-textLink-foreground);
+}
+
+#__header span.doc-url {
+    opacity: 80%;
+}
+
 #__side, #__side-search {
     width: var(--side-width);
     font-size: 12px;
