@@ -627,7 +627,7 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
     }
 
     projectAdded(proj:Project) {
-        this.nodes.push(new Node({ label: proj.source.title, docUri: 'README.md', 
+        this.nodes.push(new Node({ label: proj.source.title, docUri: '/README.md', 
                                    project:proj, children: proj.projectTree.children}))
         
         this.updateUriMappings(proj.source, this.nodes[this.nodes.length - 1])
@@ -636,7 +636,7 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
 
     projectChanged(proj:Project) {
         const idx = this.nodes.findIndex(n => n.source == proj.source)
-        this.nodes[idx] = new Node({ label: proj.source.title, docUri: 'README.md', 
+        this.nodes[idx] = new Node({ label: proj.source.title, docUri: '/README.md', 
                                    project:proj, children: proj.projectTree.children})
         this.updateUriMappings(proj.source, this.nodes[idx])
         this.changed(this.nodes[idx])   
