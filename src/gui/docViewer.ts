@@ -341,13 +341,17 @@ export class DocViewer implements vscode.Disposable {
     }
 
     private generateDocUrlHtml(document:Document, title:string) {
+        const hrefAttr = (href:string|undefined) => {
+            if (!href) return ""
+            return `href="${href}"`
+        }
         // get path for currently opened document
         let docPathHtml = ""
         const source = document.source ?? this.#current?.source;
         if (source) { // doc inside projects, or external link, but we have a source at hand
             let documentNode = this.projectProvider?.getNodeForUri(source, document.projectUrl )
             for (; documentNode; documentNode = documentNode.parent) // todo: maybe html parts should be encoded 
-                docPathHtml = `<a class="doc-url" >${documentNode.label}</a>`  
+                docPathHtml = `<a class="doc-url" ${hrefAttr(documentNode.docUri)}">${documentNode.label}</a>`  
                               + (docPathHtml.length > 0 ? `<span class="url-separator">/</span>` : "") 
                               + docPathHtml;
             
@@ -447,10 +451,15 @@ export class DocViewer implements vscode.Disposable {
         panel.webview.onDidReceiveMessage(async message=> {
             // todo: should register message handlers in a dictionary (object) and call that here instead of if else
             if (message.command == "openLink" && this.#current) {
-                const base = /^[a-z][a-z\d.+-]+:/i.test(this.#current.uri) ? this.#current.uri : `mdoc:///${this.#current.uri}` // if current has no scheme, we add one, otherwise URL parse fails
+                
+                /// Builds an url with the given scheme (like 'http'), scheme and path are always separated by "//"
+                /// The URLs are Unix filelike, meaning that path also begins with "/" as the root 
+                const fileUrlWithScheme = (scheme:string, path:string) => (path.startsWith("/")) ? `${scheme}://${path}` : `${scheme}:///${path}`
+                
+                const base = /^[a-z][a-z\d.+-]+:/i.test(this.#current.uri) ? this.#current.uri : fileUrlWithScheme("mdoc",this.#current.uri) // if current has no scheme, we add one, otherwise URL parse fails
                 const docUrl = new URL(message.href, base)
                 // the final url is the path part for mdoc urls, otherwise the whole thing (for http, https ex.)
-                const url = docUrl.protocol == "mdoc:" ? docUrl.pathname.substr(1) : docUrl.toString()
+                const url = docUrl.protocol == "mdoc:" ? docUrl.pathname : docUrl.toString()
                 
                 this.openDocument(this.#current.source, url, message.title)
             } else if (message.command == "search") {
