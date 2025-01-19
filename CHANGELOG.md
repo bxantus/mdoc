@@ -4,6 +4,15 @@ All notable changes to the "mdoc" extension are documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.5.0] - 2025-01-19
+
+### Changed & Fixed
+- Breadcrumbs navigation in the header. Links weren't working at all, and you couldn't differentiate when a breadcrumb
+leads to a valid destination.
+  - Breadcrumb items not having an associated page are rendered less prominent
+  - Clicking on a _valid_ breadcrumb item will navigate to the pointed page
+  - Breadcrumbs will show correctly when encoded mdoc/vscode links are opened from an external app (like a web browser)  
+
 ## [1.4.0] - 2024-03-19
 ### Changed
 - Synced syntax highliting in mdoc with vscode's latest. This is achieved by using the same CSS styles as vscode for markdown preview
