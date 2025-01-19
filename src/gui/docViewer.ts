@@ -13,6 +13,7 @@ import { sanitizeCodeFence } from '../util/sanitizeHtml';
 import { dropSource } from '../extension';
 import { DocumentItem, showDocumentPicker } from './openPicker';
 import { registerMdocCommands } from './mdocCommands';
+import * as uri from '../util/uri'
 
 interface SearchState {
     query:string
@@ -341,8 +342,7 @@ export class DocViewer implements vscode.Disposable {
     }
 
     private generateDocUrlHtml(document:Document, title:string) {
-        const hrefAttr = (href:string|undefined) => {
-            if (!href) return ""
+        const hrefAttr = (href:string) => {
             return `href="${href}"`
         }
         let docPathHtml = ""
@@ -353,7 +353,8 @@ export class DocViewer implements vscode.Disposable {
             const path:string[] = []
             for (; documentNode; documentNode = documentNode.parent) { // todo: maybe html parts should be encoded 
                 path.push(documentNode.docUri
-                    ? `<a class="doc-url" ${hrefAttr(documentNode.docUri)}">${documentNode.label}</a>`  
+                    // all hrefs here start with '/', so the links aren't opened relative to the current page...
+                    ? `<a class="doc-url" ${hrefAttr(uri.joinPath('/', documentNode.docUri))}">${documentNode.label}</a>`  
                     : `<span class="doc-url">${documentNode.label}</span>`  
                 )
             }
@@ -456,8 +457,7 @@ export class DocViewer implements vscode.Disposable {
             if (message.command == "openLink" && this.#current) {
                 
                 /// Builds an url with the given scheme (like 'http'), scheme and path are always separated by "//"
-                /// The URLs are Unix filelike, meaning that path also begins with "/" as the root 
-                const fileUrlWithScheme = (scheme:string, path:string) => (path.startsWith("/")) ? `${scheme}://${path}` : `${scheme}:///${path}`
+                const fileUrlWithScheme = (scheme:string, path:string) => uri.joinPath(`${scheme}://`,path)
                 
                 const base = /^[a-z][a-z\d.+-]+:/i.test(this.#current.uri) ? this.#current.uri : fileUrlWithScheme("mdoc",this.#current.uri) // if current has no scheme, we add one, otherwise URL parse fails
                 const docUrl = new URL(message.href, base)
@@ -474,7 +474,7 @@ export class DocViewer implements vscode.Disposable {
             } else if (message.command == "copyUrl" && this.#current) {
                 const remoteUrl = (await this.#current.source.getRemoteUrl()).replace("://", "/")
 
-                vscode.env.clipboard.writeText(`vscode://bxantus.mdoc/open/${remoteUrl}/${this.#current.uri}`); 
+                vscode.env.clipboard.writeText(uri.joinPath(`vscode://bxantus.mdoc/open/${remoteUrl}`, this.#current.uri)); 
             }
         })
         return panel
@@ -623,7 +623,7 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
     }
 
     getNodeForUri(source:SourceAdapter, docUri:string) {
-        return this.nodesByUri.get(source)?.get(docUri)
+        return this.nodesByUri.get(source)?.get(uri.normalizeMdocPath(docUri))
     }
 
     projectAdded(proj:Project) {
@@ -685,7 +685,7 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
         const mappings = new Map<string, Node>()
         for (const node of eachNode(rootNode)) {
             if (node.docUri)
-                mappings.set(node.docUri, node)
+                mappings.set(uri.normalizeMdocPath(node.docUri), node)
         }
         this.nodesByUri.set(source, mappings)
     }
