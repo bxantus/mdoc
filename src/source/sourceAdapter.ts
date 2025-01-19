@@ -66,7 +66,7 @@ export interface TreeItemVal {
 }
 
 export function* allTreeItems(tree:ProjectTree, source:SourceAdapter) : Generator<TreeItemVal> {
-    const root = { label: source.title, docUri:'/README.md' }
+    const root = { label: source.title, docUri:'README.md' }
     yield root
     for (const child of tree.children) 
         yield * allTreeChildren(child, root);

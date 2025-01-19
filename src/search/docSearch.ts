@@ -95,7 +95,7 @@ export class DocSearch {
                 if (doc) this.indexDocument(doc, title, docPath, indexBuilder) 
             }
         }
-        await visitDoc("/README.md", this.source.title, "")
+        await visitDoc("README.md", this.source.title, "")
 
         // walk the documents, and index all of them, emit index progress
         for (const docData of documents(tree.children)) {
