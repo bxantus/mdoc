@@ -354,7 +354,8 @@ export class DocViewer implements vscode.Disposable {
             for (; documentNode; documentNode = documentNode.parent) { // todo: maybe html parts should be encoded 
                 path.push(documentNode.docUri
                     // all hrefs here start with '/', so the links aren't opened relative to the current page...
-                    ? `<a class="doc-url" ${hrefAttr(uri.joinPath('/', documentNode.docUri))}">${documentNode.label}</a>`  
+                    // see setting up Nodes in ProjectTreeProvider
+                    ? `<a class="doc-url" ${hrefAttr(documentNode.docUri)}">${documentNode.label}</a>`  
                     : `<span class="doc-url">${documentNode.label}</span>`  
                 )
             }
@@ -456,10 +457,13 @@ export class DocViewer implements vscode.Disposable {
             // todo: should register message handlers in a dictionary (object) and call that here instead of if else
             if (message.command == "openLink" && this.#current) {
                 
-                /// Builds an url with the given scheme (like 'http'), scheme and path are always separated by "//"
-                const fileUrlWithScheme = (scheme:string, path:string) => uri.joinPath(`${scheme}://`,path)
+                /// Builds an url with the given scheme (like 'http'), scheme and path are always separated by "///"
+                /// The URLs are Unix filelike, meaning that path also begins with "/" as the root directory
+                /// This ensures pathname will yield the correct path for the URL (otherwise first part will be the authority)
+                const fileUrlWithScheme = (scheme:string, path:string) => uri.joinPath(`${scheme}:///`, path)
                 
                 const base = /^[a-z][a-z\d.+-]+:/i.test(this.#current.uri) ? this.#current.uri : fileUrlWithScheme("mdoc",this.#current.uri) // if current has no scheme, we add one, otherwise URL parse fails
+                // this will resolve relative links correctly, and will also work for absolute links (http, https)
                 const docUrl = new URL(message.href, base)
                 // the final url is the path part for mdoc urls, otherwise the whole thing (for http, https ex.)
                 const url = docUrl.protocol == "mdoc:" ? docUrl.pathname : docUrl.toString()
@@ -524,7 +528,7 @@ export class Node { // a node in the project tree sidebar
         this.label = source.label
         if (source.project)
             this.project = source.project
-        this.docUri = source.docUri
+        this.docUri = source.docUri ? uri.normalizeMdocPath(source.docUri) : undefined 
         this.children = source.children.map(tn => new Node({parent:this, label: tn.label, docUri: tn.docUri, children: tn.children}))
     }
 
@@ -684,8 +688,8 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
     private updateUriMappings(source:SourceAdapter, rootNode:Node) {
         const mappings = new Map<string, Node>()
         for (const node of eachNode(rootNode)) {
-            if (node.docUri)
-                mappings.set(uri.normalizeMdocPath(node.docUri), node)
+            if (node.docUri) // docUri's are always normalized, see Node constructor
+                mappings.set(node.docUri,node)
         }
         this.nodesByUri.set(source, mappings)
     }

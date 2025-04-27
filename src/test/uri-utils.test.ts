@@ -9,4 +9,11 @@ describe('URI Utils', () => {
         assert.strictEqual(joinPath('a/', 'b', 'c'), 'a/b/c')
         assert.strictEqual(joinPath('a/', '/b', 'c'), 'a/b/c')
     })
+    
+    it('should normalize mdoc paths correctly', () => {
+        assert.strictEqual(normalizeMdocPath('a/b.md'), '/a/b.md')
+        assert.strictEqual(normalizeMdocPath('/a/b.md'), '/a/b.md')
+        assert.strictEqual(normalizeMdocPath('a%20b/c.md'), '/a b/c.md')
+        assert.strictEqual(normalizeMdocPath('/a%20b/c.md'), '/a b/c.md')
+    })
 })

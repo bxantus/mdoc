@@ -169,7 +169,7 @@
 		]
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
+		"vscode:prepublish": "npm run compile && npm run test",
 		"compile": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
 		"test": "ts-mocha -p ./  'src/test/**/*.ts'"
