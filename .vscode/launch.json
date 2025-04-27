@@ -19,18 +19,24 @@
 			"preLaunchTask": "${defaultBuildTask}"
 		},
 		{
-			"name": "Extension Tests",
-			"type": "extensionHost",
+			"name": "Tests",
+			"type": "node",
 			"request": "launch",
-			"runtimeExecutable": "${execPath}",
+			"program": "${workspaceRoot}/node_modules/ts-mocha/bin/ts-mocha",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+                "-p", "./",
+				"--timeout", "999999",
+                "src/test/**/*.ts",
 			],
-			"outFiles": [
-				"${workspaceFolder}/out/test/**/*.js"
-			],
-			"preLaunchTask": "${defaultBuildTask}"
+			// needed for registering ts-node, so we can execute .ts files directly
+			// without having to compile them first
+            "runtimeArgs": [
+                "-r",
+                "ts-node/register"
+            ],
+			// see the output in the debug console
+			"outputCapture": "std",
+			"internalConsoleOptions": "openOnSessionStart"
 		}
 	]
 }
