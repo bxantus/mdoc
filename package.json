@@ -172,7 +172,8 @@
 		"vscode:prepublish": "npm run compile && npm run test",
 		"compile": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
-		"test": "ts-mocha -p ./  'src/test/**/*.ts'"
+		"test": "ts-mocha -p ./  'src/test/**/*.ts'",
+		"package": "vsce package"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
@@ -184,6 +185,7 @@
 		"@types/vscode": "^1.46.0",
 		"@typescript-eslint/eslint-plugin": "^2.30.0",
 		"@typescript-eslint/parser": "^2.30.0",
+		"@vscode/vsce": "^3.3.2",
 		"eslint": "^6.8.0",
 		"glob": "^7.1.6",
 		"mocha": "^11.0.1",
