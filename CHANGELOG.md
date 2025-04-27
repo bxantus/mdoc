@@ -4,7 +4,7 @@ All notable changes to the "mdoc" extension are documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [1.5.0] - 2025-01-19
+## [1.5.0] - 2025-04-17
 
 ### Changed & Fixed
 - Breadcrumbs navigation in the header. Links weren't working at all, and you couldn't differentiate when a breadcrumb
