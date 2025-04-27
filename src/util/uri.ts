@@ -15,11 +15,12 @@ export function joinPath(p1:string, ...parts:string[]):string  {
 
 /**
  * Normalizes path of mdoc URIs, meaning that:
- * * path won't start with `/` char, mdoc URIs are all relative to the repo root, no matter how the users have specified them
- * * also will decode special chars inside...
+ * * ensures that the path is absolute (starts with /)
+ * * will decode special URI chars inside the path (like %20 for spaces)
  */
 export function normalizeMdocPath(path:string):string {
-    if (path.startsWith('/')) path = path.substring(1)
+    if (!path.startsWith('/'))
+        path = '/' + path // make it absolute
     
     return decodeURIComponent(path)
 }
