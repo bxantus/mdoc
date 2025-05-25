@@ -4,6 +4,12 @@ All notable changes to the "mdoc" extension are documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.5.1] - 2025-05-25
+
+### Fixed
+- mdoc wasn't able to open projects under Linux from the filesystem. Path parsing was flawed 
+  under Posix like systems
+
 ## [1.5.0] - 2025-04-17
 
 ### Changed & Fixed
