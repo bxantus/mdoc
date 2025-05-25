@@ -3,7 +3,7 @@ import { URL } from "url";
 import { Document } from "./document";
 import {promises as fs, watch as fsWatch, FSWatcher} from "fs"
 import { MarkdownParser, ParseListener } from "../parser/mdParser";
-import { EventEmitter } from "vscode";
+import { EventEmitter, Uri } from "vscode";
 import { ChildProcess, spawn } from "child_process";
 
 export class GitSource implements SourceAdapter {
@@ -18,16 +18,16 @@ export class GitSource implements SourceAdapter {
 
     constructor(uri:string) {
         this.#uri = uri
-        let location = new URL(uri)
+        const location = Uri.parse(uri)
         // location may be a hard disk location, also .git url to the repository
         // in case of repo url, the extension will manage the repository on the hard drive
-        if (location.protocol == "file:") {
-            this.path = decodeURIComponent(location.pathname).substr(1)
+        if (location.scheme == "file") {
+            this.path = location.fsPath
         } else {
             this.remoteUrl = uri
             // todo: should clone repo if not already cloned (check project folder). folder name or path, should be generated based on remote url host and path
         }
-        this.#rootUrl = location
+        this.#rootUrl = new URL(uri)
         this.init()
     }
 
