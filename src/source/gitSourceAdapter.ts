@@ -5,6 +5,7 @@ import {promises as fs, watch as fsWatch, FSWatcher} from "fs"
 import { MarkdownParser, ParseListener } from "../parser/mdParser";
 import { EventEmitter, Uri } from "vscode";
 import { ChildProcess, spawn } from "child_process";
+import { basename } from "path";
 
 export class GitSource implements SourceAdapter {
     private path:string = "" // path to the root of the repository on the file system
@@ -22,7 +23,7 @@ export class GitSource implements SourceAdapter {
         // location may be a hard disk location, also .git url to the repository
         // in case of repo url, the extension will manage the repository on the hard drive
         if (location.scheme == "file") {
-            this.path = location.fsPath
+            this.path = location.fsPath.replace(/\\/g, "/") // normalize path to use forward slashes
         } else {
             this.remoteUrl = uri
             // todo: should clone repo if not already cloned (check project folder). folder name or path, should be generated based on remote url host and path
@@ -94,7 +95,7 @@ export class GitSource implements SourceAdapter {
     #titleChanged = new EventEmitter<string>()
 
     private async loadProjectTree() {
-        this.#title = this.path.substr(this.path.lastIndexOf('/') + 1) // title will become the directory of repo
+        this.#title = basename(this.path) // title will become the directory of repo
         // note: if title isn't found we could parse it as the first heading from README.md
         try {
             // fetch index.md and load structure from it
