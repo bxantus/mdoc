@@ -2,7 +2,7 @@
 	"name": "mdoc",
 	"displayName": "mdoc - Markdown Documentation Viewer",
 	"description": "markdown documentation viewer for Visual Studio Code",
-	"version": "1.5.1",
+	"version": "1.6.0-prerelease",
 	"publisher": "bxantus",
 	"repository": {
 		"type": "git",
@@ -13,7 +13,7 @@
 	},
 	"icon": "media/icon.png",
 	"engines": {
-		"vscode": "^1.46.0"
+		"vscode": "^1.73.0"
 	},
 	"categories": [
 		"Other"
@@ -22,12 +22,13 @@
 		"onStartupFinished"
 	],
 	"main": "./out/extension.js",
+	"l10n": "./l10n",
 	"contributes": {
 		"viewsContainers": {
 			"activitybar": [
 				{
 					"id": "mdoc",
-					"title": "Documentations",
+					"title": "%mdoc.activitybar.title%",
 					"icon": "media/library_books.svg"
 				}
 			]
@@ -36,53 +37,54 @@
 			"mdoc": [
 				{
 					"id": "mdocProjects",
-					"name": "Projects"
+					"name": "%mdoc.view.mdoc.name%",
+					"icon": ""
 				}
 			]
 		},
 		"commands": [
 			{
 				"command": "mdoc.add.fromFilesystem",
-				"title": "Add documentation project from the filesystem",
+				"title": "%mdoc.add.fromFilesystem.title%",
 				"category": "mdoc"
 			},
 			{
 				"command": "mdoc.add.fromGit",
-				"title": "Add documentation project from git repository",
+				"title": "%mdoc.add.fromGit.title%",
 				"enablement": "false",
 				"category": "mdoc"
 			},
 			{
-				"command": "mdoc.open",
-				"title": "Open document",
-				"category": "mdoc"
-			},
-			{
-				"command": "mdoc.openSourceFromSidebar",
-				"title": "Open document source"
-			},
-			{
-				"command": "mdoc.openIndexFromSidebar",
-				"title": "Open `index.md`"
-			},
-			{
 				"command": "mdoc.project.update",
-				"title": "Update project",
+				"title": "%mdoc.project.update.title%",
 				"icon": "$(sync)"
 			},
 			{
 				"command": "mdoc.project.search",
-				"title": "Search in project",
+				"title": "%mdoc.project.search.title%",
 				"icon": "$(search)"
 			},
 			{
 				"command": "mdoc.project.closeSearch",
-				"title": "Close search",
+				"title": "%mdoc.project.closeSearch.title%",
 				"icon": "$(close)"
 			},
 			{
 				"command": "mdoc.project.remove",
-				"title": "Remove project"
+				"title": "%mdoc.project.remove.title%"
+			},
+			{
+				"command": "mdoc.open",
+				"title": "%mdoc.open.title%",
+				"category": "mdoc"
+			},
+			{
+				"command": "mdoc.openSourceFromSidebar",
+				"title": "%mdoc.openSourceFromSidebar.title%"
+			},
+			{
+				"command": "mdoc.openIndexFromSidebar",
+				"title": "%mdoc.openIndexFromSidebar.title%"
 			}
 		],
 		"menus": {
@@ -158,7 +160,7 @@
 		"viewsWelcome": [
 			{
 				"view": "mdocProjects",
-				"contents": "No documentation projects added.\n[Add project from filesystem](command:mdoc.add.fromFilesystem)"
+				"contents": "%mdoc.view.mdocProjects.content%"
 			}
 		],
 		"keybindings": [
@@ -169,37 +171,52 @@
 		]
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile && npm run test",
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
-		"test": "ts-mocha -p ./  'src/test/**/*.ts'",
-		"package": "vsce package"
+		"check-types": "tsc --noEmit",
+		"clean": "rimraf out",
+		"compile": "npm run check-types && npm run lint && node esbuild.js",
+		"compile-tests": "tsc -p . --outDir out",
+		"l10n": "npx @vscode/l10n-dev export --outDir ./l10n ./src",
+		"lint": "eslint src",
+		"package": "npm run clean && npm run check-types && npm run lint && node esbuild.js --production",
+		"pretest": "npm run compile-tests && npm run compile && npm run lint",
+		"test": "vscode-test",
+		"vscode:prepublish": "npm run package",
+		"watch": "npm-run-all -p watch:*",
+		"watch:esbuild": "node esbuild.js --watch",
+		"watch-tests": "tsc -p . -w --outDir out",
+		"watch:tsc": "tsc --noEmit --watch --project tsconfig.json"
 	},
 	"devDependencies": {
-		"@types/glob": "^7.1.1",
+		"@eslint/js": "^10.0.1",
+		"@stylistic/eslint-plugin": "^5.10.0",
 		"@types/lunr": "^2.3.3",
-		"@types/markdown-it": "^10.0.1",
+		"@types/mark.js": "^8.11.12",
 		"@types/mocha": "^7.0.2",
-		"@types/node": "^13.11.0",
-		"@types/node-fetch": "^2.5.7",
-		"@types/vscode": "^1.46.0",
-		"@typescript-eslint/eslint-plugin": "^2.30.0",
-		"@typescript-eslint/parser": "^2.30.0",
-		"@vscode/vsce": "^3.3.2",
-		"eslint": "^6.8.0",
-		"glob": "^7.1.6",
-		"mocha": "^11.0.1",
-		"ts-mocha": "^11.1.0",
-		"typescript": "^3.8.3",
-		"vscode-test": "^1.3.0"
+		"@types/node": "^24.0.0",
+		"@types/node-fetch": "^2.6.13",
+		"@types/vscode": "^1.73.0",
+		"@types/vscode-webview": "^1.57.5",
+		"@vscode/l10n-dev": "^0.0.35",
+		"@vscode/test-cli": "^0.0.15",
+		"@vscode/test-electron": "^3.1.0",
+		"@vscode/vsce": "^4.0.0",
+		"esbuild": "^0.28.2",
+		"eslint": "^10.13.0",
+		"glob": "^13.0.6",
+		"mocha": "^12.0.3",
+		"npm-run-all": "^4.1.5",
+		"rimraf": "^6.1.3",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.48.1"
 	},
 	"dependencies": {
-		"highlight.js": "^10.4.1",
-		"lunr": "^2.3.8",
+		"@vscode/codicons": "^0.0.46-24",
+		"@vscode/l10n": "^0.0.18",
+		"highlight.js": "^11.12.0",
+		"lunr": "^2.3.9",
 		"mark.js": "^8.11.1",
-		"markdown-it": "^12.3.2",
-		"markdown-it-anchor": "^5.3.0",
-		"node-fetch": "^2.6.7",
-		"vscode-codicons": "0.0.16"
+		"markdown-it": "^14.3.3",
+		"markdown-it-anchor": "^10.0.0",
+		"node-fetch": "^3.3.2"
 	}
 }

@@ -1,0 +1,14 @@
+{
+  "mdoc.add.fromFilesystem.title": "Ajouter un manuel depuis le système de fichiers",
+  "mdoc.add.fromGit.title": "Ajouter un manuel depuis un dépôt Git",
+  "mdoc.project.update.title": "Mettre à jour le manuel",
+  "mdoc.project.search.title": "Rechercher dans le manuel",
+  "mdoc.project.closeSearch.title": "Fermer la recherche",
+  "mdoc.project.remove.title": "Retirer le manuel",
+  "mdoc.open.title": "Ouvrir la page",
+  "mdoc.openSourceFromSidebar.title": "Ouvrir le fichier de la page",
+  "mdoc.openIndexFromSidebar.title": "Ouvrir `index.md`",
+  "mdoc.activitybar.title": "Base documentaire",
+  "mdoc.view.mdoc.name": "Manuels",
+  "mdoc.view.mdocProjects.content": "Aucun manuel ajouté.\n[Ajouter un manuel depuis le système de fichiers](command:mdoc.add.fromFilesystem)"
+}

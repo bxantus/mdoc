@@ -8,5 +8,6 @@ vsc-extension-quickstart.md
 **/.eslintrc.json
 **/*.map
 **/*.ts
-node_modules/mark.js
-!node_modules/mark.js/dist/mark.min.js
+node_modules/**
+**/esbuild.*
+**/eslint.*
