@@ -1,8 +1,6 @@
 import Mark, { MarkOptions } from "mark.js";
- 
-const vscodeApi = (window as any).acquireVsCodeApi(); // can be called only once per webview
 
-// Note : l10n-dev does'nt export strings from this file... no import of vscode ?
+var vscodeApi = (window as any).acquireVsCodeApi(); // can be called only once per webview
 
 // click handler from vscode markdown preview
 // clicking on links should be passed to the extension, to handle opening new documents
@@ -35,37 +33,33 @@ document.addEventListener("click", event => {
     }
 });
 
-window.addEventListener('message', event => {
-    const message = event.data; // The JSON data our extension sent
-    const handlers = {
-        scrollToTop() {
-            document.getElementsByTagName('html')[0].scrollTop = 0; // embedded html is scrolled
-        },
-    };
-    const action = handlers[message.command];
-    if (action) {
-        action(message);
-    }
-});
-
+// On page loaded
 window.addEventListener('load', () => {
     const urlCopy = document.getElementById("copy-url");
     if (urlCopy) {
+        // On click url
         urlCopy.onclick = (ev) => {
             vscodeApi.postMessage({
                 command: "copyUrl"
             });
         };
     }
+    // ========
+    // Find box
+    // ========
     const findWidget = new FindWidget();
     globalThis.findWidget = findWidget; // for easier debugging, can be accessed as: globalThis.frames[0].findWidget
+    // Content
     const marker = new Mark(document.getElementById("__markdown-content")!);
+    // Keydown listener
     window.addEventListener("keydown", (keyboardEvent) => {
+        // Hide search box
         if (keyboardEvent.key === "Escape") {
             if (findWidget.isOpen) {
                 findWidget.close();
             }
         }
+        // Show & focus search box
         else if ((keyboardEvent.key === "f" || keyboardEvent.key === "F") && (keyboardEvent.ctrlKey || keyboardEvent.metaKey)) { // Ctrl+F
             if (!findWidget.isOpen) {
                 findWidget.open();
@@ -73,23 +67,37 @@ window.addEventListener('load', () => {
             findWidget.focus();
         }
     });
-    findWidget.onInputChanged((type: string, options: AddEventListenerOptions) => findInPage(findWidget, marker, type, options));
+    // Input changed in search box
+    findWidget.onInputChanged((type: string, options: AddEventListenerOptions) => {
+        findInPage(findWidget, marker, type, options);
+    });
 });
 
+// On message
+window.addEventListener('message', (messageEvent) => {
+    const message = messageEvent.data; // The JSON data our extension sent
+    if (message.command === "scrollToTop") {
+        document.getElementsByTagName('html')[0].scrollTop = 0; // embedded html is scrolled
+    }
+});
+
+// Search in page
 function findInPage(findWidget: FindWidget, marker: Mark, text: string, options) {
     marker.unmark({
         done() {
+            // No input
             if (text === "") {
                 findWidget.setResults([]);
                 return;
             }
-            const markOptions:MarkOptions = {
+            // 
+            const markOptions: MarkOptions = {
                 done: numRes => {
                     const results = Array.from(document.querySelectorAll("mark"));
                     findWidget.setResults(results);
                 }
             };
-
+            // Highlight regular expression
             if (options.useRegexp) {
                 try {
                     const re = new RegExp(text, options.matchCase ? "gm" : "gmi");
@@ -100,6 +108,7 @@ function findInPage(findWidget: FindWidget, marker: Mark, text: string, options)
                     findWidget.regexpError(err);
                 }
             }
+            // Highlight text terms
             else {
                 markOptions.caseSensitive = options.matchCase;
                 marker.mark(text, markOptions);
@@ -109,10 +118,12 @@ function findInPage(findWidget: FindWidget, marker: Mark, text: string, options)
 
 }
 
+// Create find widget and bind search box
 class FindWidget {
     rootDiv: HTMLElement | null;
     searchInput: HTMLElement | null;
     resultSpan: HTMLElement | null;
+    noResultText: string;
     optCaseSensitiveIcon: HTMLElement | null;
     optRegexIcon: HTMLElement | null;
     prevResultIcon: HTMLElement | null;
@@ -122,62 +133,21 @@ class FindWidget {
     resultIdx: number;
     currentResult: HTMLElement | undefined;
     constructor() {
-        // div.#__find
-        //this.rootDiv = document.createElement("div");
-        //this.rootDiv.id = "__find";
-        //this.rootDiv.classList.add("closed");
         this.rootDiv = document.getElementById("__find");
-        // input 
-        //this.searchInput = document.createElement("input");
-        //this.searchInput.type = "text";
-        //this.searchInput.placeholder = vscodeApi.l10n.t("Search expression");
-        //this.searchInput.placeholder = "Search expression";
         this.searchInput = document.getElementById("__input");
-        // span
-        //this.resultSpan = document.createElement("span");
-        //this.resultSpan.classList.add("position");
-        //this.resultSpan.innerHTML = vscodeApi.l10n.t("No Results");
-        //this.resultSpan.innerHTML = "No Results";
         this.resultSpan = document.getElementById("__result");
-        // icons
-        //this.optCaseSensitiveIcon = this.createIcon({ icon: "case-sensitive", class: "option case", title: vscodeApi.l10n.t("Match Case") });
-        //this.optRegexIcon = this.createIcon({ icon: "regex", class: "option regex", title: vscodeApi.l10n.t("Use Regular Expression") });
-        //this.prevResultIcon = this.createIcon({ icon: "arrow-up", class: "disabled action", title: vscodeApi.l10n.t("Previous match (Shift+Enter)") });
-        //this.nextResultIcon = this.createIcon({ icon: "arrow-down", class: "disabled action", title: vscodeApi.l10n.t("Next match (Enter)") });
-        //this.closeIcon = this.createIcon({ icon: "close", class: "action", title: vscodeApi.l10n.t("Close (Escape)") });
-        //this.optCaseSensitiveIcon = this.createIcon({ icon: "case-sensitive", class: "option case", title: "Match Case" });
+        this.noResultText = this.resultSpan?.textContent || '...';
         this.optCaseSensitiveIcon = document.getElementById("__caseSensitive");
-        //this.optRegexIcon = this.createIcon({ icon: "regex", class: "option regex", title: "Use Regular Expression" });
         this.optRegexIcon = document.getElementById("__regex");
-        //this.prevResultIcon = this.createIcon({ icon: "arrow-up", class: "disabled action", title: "Previous match (Shift+Enter)" });
         this.prevResultIcon = document.getElementById("__prevResult");
-        //this.nextResultIcon = this.createIcon({ icon: "arrow-down", class: "disabled action", title: "Next match (Enter)" });
         this.nextResultIcon = document.getElementById("__nextResult");
-        //this.closeIcon = this.createIcon({ icon: "close", class: "action", title: "Close (Escape)" });
         this.closeIcon = document.getElementById("__close");
-        // input > div.input-container 
-        //const inputDiv = document.createElement("div");
-        //inputDiv.classList.add("input-container");
-        //inputDiv.append(this.searchInput, this.optCaseSensitiveIcon, this.optRegexIcon);
-        //this.rootDiv.append(inputDiv,
-        //    this.resultSpan,
-        //    this.prevResultIcon, this.nextResultIcon, this.closeIcon);
         this.results = [];
         this.resultIdx = 1;
         this.currentResult = undefined;
         this.setup();
     }
-
-    /* ---
-    createIcon(options = { icon: "", class: "", title: "" }) {
-        const iconElement = document.createElement("i");
-        iconElement.title = options.title;
-        iconElement.classList.value = options.class;
-        iconElement.classList.add("codicon", `codicon-${options.icon}`);
-        return iconElement;
-    }
-    --- */
-
+    // Add specific listeners to search box
     setup() {
         // div.#__find
         //document.getElementsByTagName("body")[0].append(this.rootDiv);
@@ -209,17 +179,17 @@ class FindWidget {
             }
         };
     }
-
+    // Get visibility status of search box
     get isOpen() {
         return (this.rootDiv as HTMLDivElement).classList.contains("open");
     }
-
+    // Show search box
     open() {
         const classes = (this.rootDiv as HTMLDivElement).classList;
         classes.remove("closed");
         classes.add("open");
     }
-
+    // Show search box in initial state (no results)
     reset() {
         (this.searchInput as HTMLInputElement).value = "";
         (this.searchInput as HTMLInputElement).dispatchEvent(new Event("input"));
@@ -228,17 +198,17 @@ class FindWidget {
         this.results = [];
         this.jumpToResult(0); // will clear result text
     }
-
+    // Hide search box
     close() {
         const classes = (this.rootDiv as HTMLDivElement).classList;
         classes.add("closed");
         classes.remove("open");
     }
-
+    // Focus search box
     focus() {
         (this.searchInput as HTMLInputElement).focus();
     }
-
+    // Manage search text
     onInputChanged(listener) {
         (this.searchInput as HTMLInputElement).addEventListener("input", (inputEvent) => {
             listener((this.searchInput as HTMLInputElement).value, {
@@ -247,7 +217,7 @@ class FindWidget {
             });
         });
     }
-
+    // Update seach fox icons and results navigation
     setResults(results: HTMLElement[]) {
         this.results = results;
         (this.rootDiv as HTMLDivElement).classList.remove("error");
@@ -255,13 +225,13 @@ class FindWidget {
         if (results.length > 1) {
             (this.nextResultIcon as HTMLElement).classList.remove("disabled");
             (this.prevResultIcon as HTMLElement).classList.remove("disabled");
-        } 
+        }
         else {
             (this.nextResultIcon as HTMLElement).classList.add("disabled");
             (this.prevResultIcon as HTMLElement).classList.add("disabled");
         }
     }
-
+    // Go to result item by number
     jumpToResult(idx: number) {
         if (idx < 0) {
             idx = this.results.length - 1;
@@ -275,22 +245,17 @@ class FindWidget {
             this.currentResult = this.results[idx];
             this.currentResult.scrollIntoView();
             this.currentResult.classList.add("current");
-            (this.resultSpan as HTMLSpanElement).textContent = `${this.resultIdx + 1} of ${this.results.length}`;
+            //(this.resultSpan as HTMLSpanElement).textContent = l10n.t("{0} of {1}",this.resultIdx + 1, this.results.length);
+            (this.resultSpan as HTMLSpanElement).textContent = `${this.resultIdx + 1} / ${this.results.length}`;
         }
         else {
-            //this.resultSpan.textContent = vscodeApi.l10n.t("No Results");
-            (this.resultSpan as HTMLSpanElement).textContent = "No Results";  // FIXME l10n
+            //(this.resultSpan as HTMLSpanElement).textContent = l10n.t("No Result");
+            (this.resultSpan as HTMLSpanElement).textContent = this.noResultText;
             this.currentResult = undefined;
         }
     }
-
+    // Invalid regex
     regexpError(err) {
         (this.rootDiv as HTMLDivElement).classList.add("error");
     }
 }
-/*
-function acquireVsCodeApi() {
-    throw new Error("Function not implemented.");
-}
-*/
-

@@ -1,7 +1,19 @@
 const esbuild = require("esbuild");
+const fs = require("fs");
+const path = require("path");
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
+
+const root = __dirname;
+const resourcesDir = path.join(root, "resources");
+const codiconSrcDir = path.join(root, "node_modules", "@vscode", "codicons", "dist");
+
+function ensureDir(dir) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
 
 /**
  * @type {import('esbuild').Plugin}
@@ -43,8 +55,9 @@ async function buildExtension(ctxMode) {
 }
 
 async function buildViewer(ctxMode) {
+	ensureDir(resourcesDir);
 	return esbuild.context({
-		entryPoints: ['src/www/viewer.ts'],
+		entryPoints: ['src/webviews/viewer.ts'],
 		bundle: true,
 		format: 'iife',
 		minify: production,
@@ -54,6 +67,9 @@ async function buildViewer(ctxMode) {
 		outfile: 'out/viewer.js',
 		//external: ['vscode'],
 		logLevel: 'silent',
+		external: [
+			"vscode-codicons",   
+		],
 		plugins: [
 			/* add to the end of plugins array */
 			esbuildProblemMatcherPlugin,
@@ -63,7 +79,7 @@ async function buildViewer(ctxMode) {
 
 async function buildSearch(ctxMode) {
 	return esbuild.context({
-		entryPoints: ['src/www/search.ts'],
+		entryPoints: ['src/webviews/search.ts'],
 		bundle: true,
 		format: 'iife',
 		minify: production,
@@ -80,7 +96,19 @@ async function buildSearch(ctxMode) {
 	});
 }
 
+function copyCodicons() {
+  ensureDir(resourcesDir);
+  const files = ["codicon.css", "codicon.ttf"];
+  for (const f of files) {
+    const src = path.join(codiconSrcDir, f);
+    const dst = path.join(resourcesDir, f);
+    fs.copyFileSync(src, dst);
+    console.log(`Copied ${f} -> media/`);
+  }
+}
+
 async function main() {
+	copyCodicons();
 	const extensionContext = await buildExtension();
 	const viewerContext = await buildViewer();
 	const searchContext = await buildSearch();
@@ -88,7 +116,7 @@ async function main() {
 		await extensionContext.watch();
 		await viewerContext.watch();
 		await searchContext.watch();
-	} 
+	}
 	else {
 		await extensionContext.rebuild();
 		await viewerContext.rebuild();

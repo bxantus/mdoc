@@ -85,4 +85,25 @@ If there are already projects loaded, you can reach the add commands in the `...
 
 - git documentation project repositories aren't refreshed yet automatically. You can use the **Update project** command for a manual refresh
 
+## How to localize this extension
 
+This extension use [`@vscode/l10n`](https://github.com/microsoft/vscode-l10n) to localize text to selected language display in VS Code.
+
+### Add support for a new language
+
+For each new language, (except english):
+* create a new file `/package.nls.<lang>.json` from `/package.nls.json`,
+* create a new file `/l10n/bundle.<lang>.json` from `/l10n/bundle.json`,
+* create a new file `/resources/searchHelp.<lang>.md` from `/resources/searchHelp.<lang>.md`.
+
+### Updating extension 
+
+#### Change displayed text in scripts
+
+Run `l10n` script to recreate `/l10n/bundle.json` file, then update each `/package.nls.<lang>.json` file.
+
+#### Change menus or contributions in package.json
+
+Use text placeholder `%keytext%` in `/package.json`.
+
+Update `/package.nls.json`, and each `/package.nls.<lang>.json` files.

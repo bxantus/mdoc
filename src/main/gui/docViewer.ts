@@ -14,6 +14,8 @@ import dispose from '../util/dispose';
 import { sanitizeCodeFence } from '../util/sanitizeHtml';
 import slugify from '../util/slugify';
 import * as uri from '../util/uri';
+// Webview Security
+import {getNonce} from './nonce';
 
 interface SearchState {
     query: string
@@ -27,6 +29,8 @@ interface Project {
     subs: vscode.Disposable[]
     loading?: boolean
 }
+
+// DocViewer is common for viewer.ts and search.ts scripts
 
 export class DocViewer implements vscode.Disposable {
     projects: Project[] = [];
@@ -297,19 +301,31 @@ export class DocViewer implements vscode.Disposable {
         const codiconsCss = asWebviewUri(path.join(this.#extensionPath, "resources", "codicon.css")); // FIXME : manual copy
         //const markJs = asWebviewUri(path.join(this.#extensionPath, "node_modules", "mark.js", "dist", "mark.min.js"));
 
+
         let slugs = new Map<string, number>();
         md.use(markdownItAnchor as any, { level: [1, 2, 3], slugify: (s: string) => slugify(s, slugs) });
         //md.use({ level: [1, 2, 3], slugify: (s: string) => slugify(s, slugs) });
         const markdownContent = md.render(document.markdownContent.toString());
 
+        // Webview Security
+        const nonce = getNonce();
+
         const htmlContent =
             `
             <head>
+                <meta charset="UTF-8">
+                <meta http-equiv="Content-Security-Policy" 
+                      content="default-src 'none'; 
+                      connect-src ${this.viewerPanel.webview.cspSource}; 
+                      font-src ${this.viewerPanel.webview.cspSource}; 
+                      img-src ${this.viewerPanel.webview.cspSource}; 
+                      script-src 'nonce-${nonce}';
+                      style-src ${this.viewerPanel.webview.cspSource}">
                 <link rel="stylesheet" type="text/css" href="${markdownCss}">
                 <link rel="stylesheet" type="text/css" href="${hiliteCss}">
                 <link rel="stylesheet" type="text/css" href="${viewerCss}">
                 <link rel="stylesheet" type="text/css" href="${codiconsCss}">
-                <script src="${viewerJs}"></script>
+                <script nonce="${nonce}" src="${viewerJs}"></script>
             </head>
             <body>
                 <div id="__header">
@@ -411,17 +427,27 @@ export class DocViewer implements vscode.Disposable {
         const viewerCss = asWebviewUri(path.join(this.#extensionPath, "resources", "viewer.css"));
         const viewerJs = asWebviewUri(path.join(this.#extensionPath, "out", "viewer.js"));
         const searchJs = asWebviewUri(path.join(this.#extensionPath, "out", "search.js"));
-
         const searchId = this.getSearchId(proj);
         const searchHelp = await getSearchHelpInHtml(this.#extensionPath);
+
+        // Webview Security
+        const nonce = getNonce();
 
         const htmlContent =
             `
             <head>
+                <meta charset="UTF-8">
+                <meta http-equiv="Content-Security-Policy" 
+                      content="default-src 'none'; 
+                      connect-src ${this.viewerPanel.webview.cspSource}; 
+                      font-src ${this.viewerPanel.webview.cspSource}; 
+                      img-src ${this.viewerPanel.webview.cspSource}; 
+                      script-src 'nonce-${nonce}';
+                      style-src ${this.viewerPanel.webview.cspSource}">
                 <link rel="stylesheet" type="text/css" href="${markdownCss}">
                 <link rel="stylesheet" type="text/css" href="${viewerCss}">
-                <script src="${viewerJs}"></script>
-                <script src="${searchJs}"></script>
+                <!--script nonce="${nonce}" src="${viewerJs}"></script-->
+                <script nonce="${nonce}" src="${searchJs}"></script>
             </head>
             <body>
                 <div id="__markdown-content">
@@ -435,8 +461,7 @@ export class DocViewer implements vscode.Disposable {
                 </div>
                 <div id="__side-search">
                     ${searchHelp}
-                </div>
-        
+                </div>       
             </body>
             `;
 
@@ -630,7 +655,7 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
                 item.iconPath = new vscode.ThemeIcon("tree-item-loading");
                 item.description = vscode.l10n.t("loading...");
             }
-        } 
+        }
         else if (node.searchState) {
             item.contextValue = "search";
             item.iconPath = new vscode.ThemeIcon("search");
@@ -644,7 +669,7 @@ class ProjectTreeProvider implements vscode.TreeDataProvider<Node> {
                         item.description = vscode.l10n.t('1 result');
                         break;
                     default:
-                        item.description = vscode.l10n.t('{0} results',`${node.searchState.results.length}`);
+                        item.description = vscode.l10n.t('{0} results', `${node.searchState.results.length}`);
                 }
             }
             item.command = {
